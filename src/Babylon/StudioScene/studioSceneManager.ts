@@ -238,6 +238,7 @@ class StudioSceneManager  {
     dirLight.intensity = 0.8;
     dirLight.shadowMinZ = 0;
     dirLight.shadowMaxZ = 500;
+    dirLight.intensity = 0
 
     //Create CubicTexture
     const skyboxCubecTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
@@ -302,7 +303,7 @@ class StudioSceneManager  {
       const result = await BABYLON.SceneLoader.ImportMeshAsync(
         "", 
         "models/", 
-        "glbTest.glb", 
+        "Treatment_Room.glb", 
         this.scene,
         progressCallback
       );
