@@ -1,7 +1,7 @@
 import { createStudioSceneManager } from './StudioScene/studioSceneManager';
 
 export default class GameManager {
-  constructor(canvas, engine, shedConfiguration, onFinish) {
+  constructor(canvas, engine, shedConfiguration, onEntitySelected) {
     // Define Canvas
     this.canvas = canvas;
 
@@ -19,7 +19,8 @@ export default class GameManager {
       canvas, 
       engine, 
       shedConfiguration,
-      onLoadProgress
+      onLoadProgress,
+      onEntitySelected
     });
     
     this.studioSceneManager.createScene()
@@ -47,11 +48,7 @@ export default class GameManager {
           if (this.studioSceneManager && this.studioSceneManager.forceHideLoader) {
             this.studioSceneManager.forceHideLoader();
           }
-        }, 2000);
-
-        if (typeof onFinish === 'function') {
-          onFinish();
-        }
+        }, 100);
       })
       .catch((err) => {
         // handle scene creation errors
