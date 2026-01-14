@@ -1,7 +1,7 @@
 import { createStudioSceneManager } from './StudioScene/studioSceneManager';
 
 export default class GameManager {
-  constructor(canvas, engine, shedConfiguration, onEntitySelected) {
+  constructor(canvas, engine, onReady) {
     // Define Canvas
     this.canvas = canvas;
 
@@ -18,9 +18,7 @@ export default class GameManager {
     this.studioSceneManager = createStudioSceneManager({ 
       canvas, 
       engine, 
-      shedConfiguration,
-      onLoadProgress,
-      onEntitySelected
+      onReady
     });
     
     this.studioSceneManager.createScene()
