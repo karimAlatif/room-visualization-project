@@ -2,6 +2,8 @@
 import React, { useEffect, useState, createRef } from "react";
 import * as BABYLON from "babylonjs";
 import babylonManager from "./Babylon/babylonManager.js";
+import DesertAmbientAudio from "./components/DesertAmbientAudio";
+import LoadingScreen from "./components/LoadingScreen";
 
 const gmRef = createRef<HTMLCanvasElement>();
 
@@ -11,12 +13,17 @@ export interface GameManager {
 }
 function App() {
   const [, setGameManager] = useState<GameManager>();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const { GManger }: { GManger: GameManager } = babylonManager(
       gmRef.current,
-      () => {}
-    ) as any; //Create Babylonjs Ref
+      () => {
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1500);
+      }
+    ); //Create Babylonjs Ref
     setGameManager(GManger);
 
     return () => {
@@ -48,6 +55,8 @@ function App() {
         id="canvas-container"
         ref={gmRef}
       />
+      <DesertAmbientAudio />
+      <LoadingScreen open={isLoading} />
     </div>
   );
 }
