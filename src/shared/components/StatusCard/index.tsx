@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Card, CardContent, Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { useStatusCardStyles } from './StatusCard.styles';
 
 interface StatusCardProps {
@@ -38,13 +38,13 @@ export const StatusCard = ({
     const getIconClass = () => {
         switch (variant) {
             case 'healthy':
-                return classes.iconHealthy;
+                return `${classes.iconContainer} ${classes.iconHealthy}`;
             case 'warning':
-                return classes.iconWarning;
+                return `${classes.iconContainer} ${classes.iconWarning}`;
             case 'critical':
-                return classes.iconCritical;
+                return `${classes.iconContainer} ${classes.iconCritical}`;
             default:
-                return classes.iconDefault;
+                return `${classes.iconContainer} ${classes.iconDefault}`;
         }
     };
 
@@ -76,34 +76,31 @@ export const StatusCard = ({
     };
 
     return (
-        <Card className={getCardClass()}>
-            <CardContent className={classes.cardContent}>
-                <Box className={classes.iconContainer}>
-                    <Box className={getIconClass()}>
-                        {icon}
-                    </Box>
+        <Box className={getCardClass()}>
+            <Box className={classes.cardContent}>
+                <Box className={getIconClass()}>
+                    {icon}
                 </Box>
                 
                 <Box className={classes.content}>
                     <Typography className={classes.title}>
                         {title}
                     </Typography>
-                    <Typography className={classes.value}>
-                        {value}
-                    </Typography>
-                    
-                    {trend && trendValue && (
-                        <Box className={classes.trendContainer}>
-                            <Typography className={`${classes.trend} ${getTrendClass()}`}>
+                    <Box className={classes.valueRow}>
+                        <Typography className={classes.value}>
+                            {value}
+                        </Typography>
+                        {trend && trendValue && (
+                            <Box className={`${classes.trend} ${getTrendClass()}`}>
                                 <span className={classes.trendSymbol}>
                                     {getTrendSymbol()}
                                 </span>
-                                {trendValue}
-                            </Typography>
-                        </Box>
-                    )}
+                                <span>{trendValue}</span>
+                            </Box>
+                        )}
+                    </Box>
                 </Box>
-            </CardContent>
-        </Card>
+            </Box>
+        </Box>
     );
 };

@@ -710,7 +710,7 @@ export class StudioSceneManager {
                   );
                   const lowDatesMesh = datesLow[primitiveIndex];
 
-                  mesh.addLODLevel(30, lowDatesMesh); // far
+                  mesh.addLODLevel(40, lowDatesMesh); // far
                 }
               });
             }
