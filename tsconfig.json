@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["src/*"],
+      "shared/*": ["src/shared/*"]
+    },
     "target": "es5", // Specify ECMAScript target version
     "lib": [
       "dom",

@@ -5,6 +5,7 @@ import {
   Typography,
   CircularProgress,
   Box,
+  useTheme,
 } from "@mui/material";
 
 interface LoadingScreenProps {
@@ -12,6 +13,8 @@ interface LoadingScreenProps {
 }
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ open }) => {
+  const theme = useTheme();
+
   return (
     <Dialog
       open={open}
@@ -19,7 +22,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ open }) => {
       fullScreen
       PaperProps={{
         sx: {
-          backgroundColor: "#1a1a1a",
+          backgroundColor: theme.palette.background.default,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -40,7 +43,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ open }) => {
           sx={{
             fontSize: "2.5rem",
             marginBottom: "2rem",
-            color: "#d4a574",
+            color: theme.palette.secondary.main,
             fontWeight: "bold",
           }}
         >
@@ -52,7 +55,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ open }) => {
             size={60}
             thickness={4}
             sx={{
-              color: "#d4a574",
+              color: theme.palette.secondary.main,
             }}
           />
         </Box>

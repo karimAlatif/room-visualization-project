@@ -1,23 +1,24 @@
-import { createStudioSceneManager } from './StudioScene/studioSceneManager';
+import { createStudioSceneManager, StudioSceneManager } from './StudioScene/studioSceneManager';
+import * as BABYLON from 'babylonjs';
+import { DefaultData } from './types';
 
 export default class GameManager {
-  constructor(canvas, engine, onReady) {
+  canvas: HTMLCanvasElement;
+  engine: BABYLON.Engine;
+  studioSceneManager: StudioSceneManager;
+  currentScene: BABYLON.Scene | null = null;
+
+  constructor(canvas: HTMLCanvasElement, engine: BABYLON.Engine, defaultData: DefaultData, onReady: () => void) {
     // Define Canvas
     this.canvas = canvas;
-
     // Define Engine
     this.engine = engine;
     this.engine.enableOfflineSupport = true;
-
-    // Create progress callback
-    const onLoadProgress = (progress) => {
-      console.log(`Loading progress: ${progress.toFixed(1)}%`);
-    };
-
     // Create StudioScene Instance (StudioScene Manager)
     this.studioSceneManager = createStudioSceneManager({ 
       canvas, 
       engine, 
+      defaultData,
       onReady
     });
     
@@ -41,12 +42,6 @@ export default class GameManager {
           false,
         );
 
-        // Force hide any remaining loaders after scene is ready
-        setTimeout(() => {
-          if (this.studioSceneManager && this.studioSceneManager.forceHideLoader) {
-            this.studioSceneManager.forceHideLoader();
-          }
-        }, 100);
       })
       .catch((err) => {
         // handle scene creation errors
