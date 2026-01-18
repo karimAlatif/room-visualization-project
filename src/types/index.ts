@@ -5,7 +5,7 @@ export type RobotStatus = "idle" | "moving" | "scanning" | "returning";
 export type AlertSeverity = "high" | "medium" | "info";
 
 export const FarmSize = 100;
-export const FarmNumberOfPalms = 85;
+export const FarmNumberOfPalms = 150;
 export const FarmNumberOfRobots = 5;
 export const FarmNumberOfAlerts = 5;
 export const FarmNumberOfActivityLogs = 50;
@@ -169,6 +169,81 @@ export const generateSmartTreeDistribution = (): Palm[] => {
     } palm positions (requested: ${FarmNumberOfPalms}, final spacing: ${(
       minSpacing * spacingMultiplier
     ).toFixed(2)})`
+  );
+  return palms;
+};
+
+export const generateGridTreeDistribution = (): Palm[] => {
+  const palms: Palm[] = [];
+  const varieties = ["Medjool", "Deglet Noor", "Barhi", "Zahidi"];
+  const statuses: PalmStatus[] = [
+    "healthy",
+    "healthy",
+    "healthy",
+    "warning",
+    "critical",
+  ];
+
+  // Grid parameters
+  const margin = 5; // Keep trees away from boundary
+  const availableSize = FarmSize - margin * 2;
+
+  // Calculate optimal grid dimensions
+  const rows = Math.ceil(Math.sqrt(FarmNumberOfPalms));
+  const cols = Math.ceil(FarmNumberOfPalms / rows);
+
+  // Calculate density factor - use more space when we have fewer palms
+  const maxPossiblePalms = FarmSize * FarmSize / 25; // Theoretical max with 5x5 spacing
+  const densityFactor = Math.min(1.5, Math.sqrt(maxPossiblePalms / FarmNumberOfPalms));
+  
+  // Adjust available size based on density - spread out more when fewer palms
+  const effectiveSize = availableSize * Math.min(densityFactor, 1.2);
+
+  // Calculate spacing between trees with density adjustment
+  const spacingX = effectiveSize / (cols + 1);
+  const spacingZ = effectiveSize / (rows + 1);
+
+  // Starting position (centered grid)
+  const startX = -effectiveSize / 2;
+  const startZ = -effectiveSize / 2;
+
+  let palmIndex = 0;
+
+  // Generate grid positions
+  for (let row = 0; row < rows && palmIndex < FarmNumberOfPalms; row++) {
+    for (let col = 0; col < cols && palmIndex < FarmNumberOfPalms; col++) {
+      // Calculate grid position
+      const x = startX + spacingX * (col + 1);
+      const z = startZ + spacingZ * (row + 1);
+
+      // Add slight random offset for natural look (optional)
+      const offsetX = (Math.random() - 0.5) * (spacingX * 0.15);
+      const offsetZ = (Math.random() - 0.5) * (spacingZ * 0.15);
+
+      // Random model selection for variety
+      const modelType = Math.floor(Math.random() * 10);
+
+      palms.push({
+        id: `PALM-${String(palmIndex + 1).padStart(3, "0")}`,
+        position: new Vector3(x + offsetX, 0, z + offsetZ),
+        variety: varieties[palmIndex % varieties.length], // Cycle through varieties
+        status: statuses[Math.floor(Math.random() * statuses.length)],
+        hydration: Math.floor(Math.random() * 40) + 60,
+        nutrientLevel: Math.floor(Math.random() * 30) + 70,
+        pestProbability: Math.floor(Math.random() * 20),
+        estimatedHarvest: "2025-03-15",
+        lastWatered: "2025-01-10",
+        modelType,
+      });
+
+      palmIndex++;
+    }
+  }
+
+  console.log(
+    `Generated ${palms.length} palm positions in ${rows}x${cols} grid (spacing: ${spacingX.toFixed(
+      2
+    )}x${spacingZ.toFixed(2)}, density factor: ${densityFactor.toFixed(2)})`
   );
   return palms;
 };
