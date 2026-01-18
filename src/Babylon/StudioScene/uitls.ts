@@ -2,6 +2,7 @@ import * as BABYLON from "babylonjs";
 
 export const PalmModelPaths = [
   "models/palms/Palm_1178_High_Low_Thin_2.glb",
+  "models/palms/PalmDate_378.glb"
   // Add more model paths here as needed
 ];
 

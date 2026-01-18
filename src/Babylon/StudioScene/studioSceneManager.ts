@@ -86,8 +86,8 @@ export class StudioSceneManager {
     camera.attachControl(this.canvas, true);
 
     // Limit camera movement to focus on central farm area
-    camera.lowerRadiusLimit = 40;
-    camera.upperRadiusLimit = 120;
+    camera.lowerRadiusLimit = 20;
+    camera.upperRadiusLimit = 300;
 
     // Limit vertical rotation to keep farm in view
     camera.lowerBetaLimit = 0.2; // Can look up slightly

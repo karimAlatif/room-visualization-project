@@ -4,7 +4,7 @@ export type PalmStatus = "healthy" | "warning" | "critical";
 export type RobotStatus = "idle" | "moving" | "scanning" | "returning";
 export type AlertSeverity = "high" | "medium" | "info";
 
-export const FarmSize = 100;
+export const FarmSize = 200;
 export const FarmNumberOfPalms = 150;
 export const FarmNumberOfRobots = 5;
 export const FarmNumberOfAlerts = 5;
@@ -184,41 +184,35 @@ export const generateGridTreeDistribution = (): Palm[] => {
     "critical",
   ];
 
-  // Grid parameters
-  const margin = 5; // Keep trees away from boundary
+  // Grid parameters - palms placed at borders with gaps between them
+  const margin = 3; // Small margin from absolute boundary
   const availableSize = FarmSize - margin * 2;
 
   // Calculate optimal grid dimensions
   const rows = Math.ceil(Math.sqrt(FarmNumberOfPalms));
   const cols = Math.ceil(FarmNumberOfPalms / rows);
 
-  // Calculate density factor - use more space when we have fewer palms
-  const maxPossiblePalms = FarmSize * FarmSize / 25; // Theoretical max with 5x5 spacing
-  const densityFactor = Math.min(1.5, Math.sqrt(maxPossiblePalms / FarmNumberOfPalms));
-  
-  // Adjust available size based on density - spread out more when fewer palms
-  const effectiveSize = availableSize * Math.min(densityFactor, 1.2);
+  // Calculate spacing between trees (gaps are BETWEEN palms, not outside)
+  // Palms start at the border and spacing is added between them
+  const spacingX = availableSize / (cols - 1 || 1); // Space between palms in X
+  const spacingZ = availableSize / (rows - 1 || 1); // Space between palms in Z
 
-  // Calculate spacing between trees with density adjustment
-  const spacingX = effectiveSize / (cols + 1);
-  const spacingZ = effectiveSize / (rows + 1);
-
-  // Starting position (centered grid)
-  const startX = -effectiveSize / 2;
-  const startZ = -effectiveSize / 2;
+  // Starting position at the border (top-left corner)
+  const startX = -availableSize / 2;
+  const startZ = -availableSize / 2;
 
   let palmIndex = 0;
 
-  // Generate grid positions
+  // Generate grid positions starting from borders
   for (let row = 0; row < rows && palmIndex < FarmNumberOfPalms; row++) {
     for (let col = 0; col < cols && palmIndex < FarmNumberOfPalms; col++) {
-      // Calculate grid position
-      const x = startX + spacingX * (col + 1);
-      const z = startZ + spacingZ * (row + 1);
+      // Calculate grid position - palms placed at borders and filled inward
+      const x = startX + spacingX * col;
+      const z = startZ + spacingZ * row;
 
-      // Add slight random offset for natural look (optional)
-      const offsetX = (Math.random() - 0.5) * (spacingX * 0.15);
-      const offsetZ = (Math.random() - 0.5) * (spacingZ * 0.15);
+      // Add slight random offset for natural look (optional, smaller offset)
+      const offsetX = (Math.random() - 0.5) * Math.min(spacingX * 0.1, 1.5);
+      const offsetZ = (Math.random() - 0.5) * Math.min(spacingZ * 0.1, 1.5);
 
       // Random model selection for variety
       const modelType = Math.floor(Math.random() * 10);
@@ -243,7 +237,7 @@ export const generateGridTreeDistribution = (): Palm[] => {
   console.log(
     `Generated ${palms.length} palm positions in ${rows}x${cols} grid (spacing: ${spacingX.toFixed(
       2
-    )}x${spacingZ.toFixed(2)}, density factor: ${densityFactor.toFixed(2)})`
+    )}x${spacingZ.toFixed(2)}, border-to-border layout)`
   );
   return palms;
 };
