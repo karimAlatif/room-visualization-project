@@ -13,7 +13,8 @@ import ThemeProvider from "shared/theme/ThemeProvider";
 import { useFarmStore } from "./shared/store/index.js";
 import { LeftSidebar } from "./layout/LefSideBar/LeftSidebar";
 import { useAppStyles } from "./App.styles";
-import { ArrowCircleLeft, ArrowCircleRight } from '@mui/icons-material';
+import { ArrowCircleLeft, ArrowCircleRight } from "@mui/icons-material";
+import { RightPanel } from "./layout/RightSideBar/index.js";
 
 const gmRef = createRef<HTMLCanvasElement>();
 export interface GameManager {
@@ -23,6 +24,7 @@ export interface GameManager {
 const queryClient = new QueryClient();
 
 function AppContent() {
+  const theme = useTheme();
   const classes = useAppStyles();
   const [, setGameManager] = useState<GameManager>();
   const [isSceneLoading, setIsSceneLoading] = useState(true);
@@ -34,7 +36,7 @@ function AppContent() {
 
     console.log(
       "trrrrrrrrrrrrrrrrr RRRRRRRRRRRRRRRRRRRRRRR ZZZZZZZZZZZZZZZZZZ",
-      palms.length
+      palms.length,
     );
     const { GManger }: { GManger: GameManager } = babylonManager(
       gmRef.current,
@@ -46,7 +48,7 @@ function AppContent() {
         setTimeout(() => {
           setIsSceneLoading(false);
         }, 1500);
-      }
+      },
     ); //Create Babylonjs Ref
     setGameManager(GManger);
 
@@ -57,19 +59,26 @@ function AppContent() {
     };
   }, []); // Empty dependency array - only run once on mount
 
+  if(!theme){
+    return null;
+  }
+  console.log("theme", theme);
   return (
     <Box className={classes.appContainer}>
       {/* Sidebar Container */}
       <Box
-        className={`${classes.sidebarContainer} ${isSidebarCollapsed ? 'collapsed' : ''}`}
+        className={`${classes.sidebarContainer} ${isSidebarCollapsed ? "collapsed" : ""}`}
       >
         <Box className={classes.sidebarWrapper}>
-          <LeftSidebar isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} />
+          <LeftSidebar
+            isCollapsed={isSidebarCollapsed}
+            setIsCollapsed={setIsSidebarCollapsed}
+          />
         </Box>
 
         {/* Toggle Button */}
         <Box
-          className={`${classes.toggleButton} ${isSidebarCollapsed ? 'collapsed' : ''}`}
+          className={`${classes.toggleButton} ${isSidebarCollapsed ? "collapsed" : ""}`}
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         >
           {isSidebarCollapsed ? <ArrowCircleRight /> : <ArrowCircleLeft />}
@@ -79,11 +88,7 @@ function AppContent() {
       {/* Main Content Area */}
       <Box className={classes.mainContent}>
         {/* Main 3D Canvas */}
-        <canvas
-          className={classes.canvas}
-          id="canvas-container"
-          ref={gmRef}
-        />
+        <canvas className={classes.canvas} id="canvas-container" ref={gmRef} />
 
         {/* Ambient Audio Component */}
         <Box className={classes.ambientAudioContainer}>
@@ -96,6 +101,10 @@ function AppContent() {
             <LoadingScreen open={isSceneLoading} />
           </Box>
         )}
+      </Box>
+
+      <Box className={classes.sidebarWrapper} sx={{ right: 0 }}>
+        <RightPanel />
       </Box>
     </Box>
   );
