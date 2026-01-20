@@ -1,31 +1,37 @@
 import { makeStyles } from "@mui/styles";
-import { Theme } from "@mui/material/styles";
+import { Theme, alpha } from "@mui/material/styles";
 
 export const useStyles = makeStyles((theme: Theme) => ({
-  // Main Panel Styles
+  // Main Panel Styles - Frosted Glass
   panel: {
     width: 320,
     height: "100%",
-    backgroundColor: theme.palette?.background?.paper || "#1a1a1a",
-    borderLeft: `1px solid ${theme.palette?.divider || "rgba(255, 255, 255, 0.1)"}`,
-    padding: theme?.spacing(3) || 0,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    borderLeft: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
+    padding: theme.spacing(3),
     display: "flex",
     flexDirection: "column",
+    boxShadow: `-8px 0 32px ${alpha(theme.palette.common.black, 0.15)}`,
   },
 
   panelWithSelection: {
     width: 320,
     height: "100%",
-    backgroundColor: theme.palette?.background?.paper || "#1a1a1a",
-    borderLeft: `1px solid ${theme.palette?.divider || "rgba(255, 255, 255, 0.1)"}`,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    borderLeft: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
     display: "flex",
     flexDirection: "column",
-    animation: "$slideInRight 0.3s ease-out",
+    animation: "$slideInRight 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: `-8px 0 32px ${alpha(theme.palette.common.black, 0.15)}`,
   },
 
   "@keyframes slideInRight": {
     from: {
-      transform: "translateX(100%)",
+      transform: "translateX(20px)",
       opacity: 0,
     },
     to: {
@@ -37,9 +43,11 @@ export const useStyles = makeStyles((theme: Theme) => ({
   "@keyframes fadeIn": {
     from: {
       opacity: 0,
+      transform: "translateY(8px)",
     },
     to: {
       opacity: 1,
+      transform: "translateY(0)",
     },
   },
 
@@ -49,14 +57,15 @@ export const useStyles = makeStyles((theme: Theme) => ({
     alignItems: "center",
     justifyContent: "space-between",
     padding: theme.spacing(2),
-    borderBottom: `1px solid ${theme.palette?.divider || "rgba(255, 255, 255, 0.1)"}`,
+    borderBottom: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
   },
 
   panelHeaderTitle: {
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.08em",
     fontWeight: 600,
-    color: theme.palette?.text?.secondary || "#a0a0a0",
+    fontSize: "0.75rem",
+    color: theme.palette.text.secondary,
   },
 
   // Panel Content
@@ -68,14 +77,14 @@ export const useStyles = makeStyles((theme: Theme) => ({
       width: 6,
     },
     "&::-webkit-scrollbar-track": {
-      background: theme.palette?.background?.default || "#0a0a0a",
+      background: "transparent",
+      borderRadius: 3,
     },
     "&::-webkit-scrollbar-thumb": {
-      background: theme.palette?.action?.disabled || "rgba(255, 255, 255, 0.3)",
+      background: alpha(theme.palette.common.white, 0.15),
       borderRadius: 3,
       "&:hover": {
-        background:
-          theme.palette?.action?.selected || "rgba(255, 255, 255, 0.1)",
+        background: alpha(theme.palette.common.white, 0.25),
       },
     },
   },
@@ -88,41 +97,47 @@ export const useStyles = makeStyles((theme: Theme) => ({
     alignItems: "center",
     justifyContent: "center",
     textAlign: "center",
+    padding: theme.spacing(3),
   },
 
   emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: "50%",
-    backgroundColor:
-      theme.palette?.action?.hover || "rgba(255, 255, 255, 0.05)",
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(2.5),
+    boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.15)}`,
   },
 
   emptyIconSvg: {
     width: 32,
     height: 32,
-    color: theme.palette?.text?.disabled || "#666",
+    color: theme.palette.text.disabled,
   },
 
   emptyTitle: {
-    fontWeight: 500,
+    fontWeight: 600,
     marginBottom: theme.spacing(1),
+    color: theme.palette.text.primary,
   },
 
   emptyDescription: {
-    color: theme.palette?.text?.secondary || "#a0a0a0",
+    color: theme.palette.text.secondary,
+    lineHeight: 1.5,
   },
 
   // Details Container
   detailsContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing(3),
-    animation: "$fadeIn 0.3s ease-out",
+    gap: theme.spacing(2.5),
+    animation: "$fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
   },
 
   // Header Section
@@ -133,16 +148,19 @@ export const useStyles = makeStyles((theme: Theme) => ({
   },
 
   title: {
-    fontFamily: "monospace",
     fontWeight: 700,
+    color: theme.palette.text.primary,
+    letterSpacing: "-0.01em",
   },
 
   subtitle: {
-    color: theme.palette?.text?.secondary || "#a0a0a0",
+    color: theme.palette.text.secondary,
+    fontSize: "0.875rem",
   },
 
   statusChip: {
-    fontWeight: 500,
+    fontWeight: 600,
+    borderRadius: 999,
   },
 
   // Stats Container
@@ -152,19 +170,23 @@ export const useStyles = makeStyles((theme: Theme) => ({
     gap: theme.spacing(2),
   },
 
-  // Glass Card Effect
+  // Glass Card Effect - Frosted Glass
   glassCard: {
-    padding: theme.spacing(2),
-    backgroundColor:
-      theme.palette?.mode === "dark"
-        ? "rgba(255, 255, 255, 0.05)"
-        : "rgba(0, 0, 0, 0.02)",
-    backdropFilter: "blur(10px)",
-    border: `1px solid ${theme.palette?.divider || "rgba(255, 255, 255, 0.1)"}`,
-    borderRadius: theme.shape?.borderRadius || 8,
+    padding: theme.spacing(2.5),
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
+    borderRadius: 16,
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing(2),
+    boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.12)}`,
+    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+    "&:hover": {
+      backgroundColor: alpha(theme.palette.common.white, 0.1),
+      boxShadow: `0 12px 40px ${alpha(theme.palette.common.black, 0.15)}`,
+    },
   },
 
   // Card Header
@@ -172,26 +194,28 @@ export const useStyles = makeStyles((theme: Theme) => ({
     display: "flex",
     alignItems: "center",
     gap: theme.spacing(1),
-    color: theme.palette?.text?.secondary || "#a0a0a0",
-    marginBottom: theme.spacing(1),
+    color: theme.palette.text.secondary,
+    marginBottom: theme.spacing(0.5),
   },
 
   cardTitle: {
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.08em",
     fontWeight: 600,
+    fontSize: "0.7rem",
   },
 
   icon: {
     width: 16,
     height: 16,
+    opacity: 0.8,
   },
 
   // Progress Bar
   progressContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing(0.5),
+    gap: theme.spacing(0.75),
   },
 
   progressHeader: {
@@ -201,17 +225,20 @@ export const useStyles = makeStyles((theme: Theme) => ({
   },
 
   progressLabel: {
-    color: theme.palette?.text?.secondary || "#a0a0a0",
+    color: theme.palette.text.secondary,
+    fontSize: "0.8125rem",
   },
 
   progressValue: {
-    fontFamily: "monospace",
     fontWeight: 600,
+    fontSize: "0.8125rem",
+    color: theme.palette.text.primary,
   },
 
   progressBar: {
     height: 6,
-    borderRadius: 3,
+    borderRadius: 999,
+    backgroundColor: alpha(theme.palette.common.white, 0.1),
   },
 
   // Pest Info
@@ -219,18 +246,20 @@ export const useStyles = makeStyles((theme: Theme) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: theme.spacing(1),
+    paddingTop: theme.spacing(1.5),
+    borderTop: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
   },
 
   pestLabel: {
     display: "flex",
     alignItems: "center",
     gap: theme.spacing(1),
+    color: theme.palette.text.secondary,
   },
 
   pestValue: {
-    fontFamily: "monospace",
     fontWeight: 600,
+    color: theme.palette.text.primary,
   },
 
   // Info Row
@@ -238,32 +267,38 @@ export const useStyles = makeStyles((theme: Theme) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: `${theme.spacing(0.75)} 0`,
   },
 
   infoLabel: {
-    color: theme.palette?.text?.secondary || "#a0a0a0",
+    color: theme.palette.text.secondary,
+    fontSize: "0.875rem",
   },
 
   infoValue: {
-    fontFamily: "monospace",
+    fontWeight: 500,
+    color: theme.palette.text.primary,
   },
 
   // Divider
   divider: {
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1),
+    marginTop: theme.spacing(1.5),
+    marginBottom: theme.spacing(1.5),
+    borderColor: alpha(theme.palette.common.white, 0.1),
   },
 
   // Mission Text
   missionText: {
-    fontFamily: "monospace",
     marginTop: theme.spacing(0.5),
+    color: theme.palette.text.primary,
+    fontWeight: 500,
   },
 
   // Position Text
   positionText: {
-    fontFamily: "monospace",
     marginTop: theme.spacing(0.5),
+    color: theme.palette.text.secondary,
+    fontSize: "0.875rem",
   },
 
   // Actions Section
@@ -275,9 +310,10 @@ export const useStyles = makeStyles((theme: Theme) => ({
 
   actionsTitle: {
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.08em",
     fontWeight: 600,
-    color: theme.palette?.text?.secondary || "#a0a0a0",
+    fontSize: "0.7rem",
+    color: theme.palette.text.secondary,
   },
 
   actionButtons: {
@@ -287,11 +323,24 @@ export const useStyles = makeStyles((theme: Theme) => ({
   },
 
   primaryButton: {
-    justifyContent: "flex-start",
-    boxShadow:
-      theme.palette?.mode === "dark"
-        ? "0 0 20px rgba(33, 150, 243, 0.3)"
-        : "none",
+    justifyContent: "center",
+    borderRadius: 12,
+    padding: `${theme.spacing(1.5)} ${theme.spacing(2)}`,
+    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.info.main} 100%)`,
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: "none",
+    boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+    color: theme.palette.common.white,
+    fontWeight: 600,
+    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+    "&:hover": {
+      boxShadow: `0 6px 24px ${alpha(theme.palette.primary.main, 0.4)}`,
+      transform: "translateY(-1px)",
+    },
+    "&:active": {
+      transform: "scale(0.97)",
+    },
   },
 
   // Robot Selection
@@ -311,12 +360,18 @@ export const useStyles = makeStyles((theme: Theme) => ({
     justifyContent: "flex-start",
     textTransform: "none",
     padding: theme.spacing(1.5),
-    borderRadius: theme.shape?.borderRadius || 8,
-    backgroundColor:
-      theme.palette?.action?.hover || "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    backgroundColor: alpha(theme.palette.common.white, 0.06),
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
+    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
     "&:hover": {
-      backgroundColor:
-        theme.palette?.action?.selected || "rgba(255, 255, 255, 0.1)",
+      backgroundColor: alpha(theme.palette.common.white, 0.1),
+      borderColor: alpha(theme.palette.common.white, 0.2),
+    },
+    "&:active": {
+      transform: "scale(0.98)",
     },
   },
 
@@ -330,62 +385,70 @@ export const useStyles = makeStyles((theme: Theme) => ({
   robotInfo: {
     display: "flex",
     alignItems: "center",
-    gap: theme?.spacing(1),
+    gap: theme.spacing(1.5),
   },
 
   // Activity Section
   activitySection: {
-    borderTop: `1px solid ${theme?.palette?.divider || "rgba(255, 255, 255, 0.1)"}`,
-    paddingTop: theme?.spacing(2),
+    borderTop: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
+    paddingTop: theme.spacing(2.5),
+    marginTop: theme.spacing(1),
   },
 
   activityTitle: {
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.08em",
     fontWeight: 600,
-    color: theme?.palette?.text?.secondary || "#a0a0a0",
-    marginBottom: theme?.spacing(1.5),
+    fontSize: "0.7rem",
+    color: theme.palette.text.secondary,
+    marginBottom: theme.spacing(1.5),
     display: "block",
   },
 
   activityList: {
     display: "flex",
     flexDirection: "column",
-    gap: theme?.spacing(1),
-    maxHeight: 192,
+    gap: theme.spacing(1),
+    maxHeight: 200,
     overflowY: "auto",
     "&::-webkit-scrollbar": {
       width: 6,
     },
     "&::-webkit-scrollbar-track": {
-      background: theme?.palette?.background?.default || "#0a0a0a",
+      background: "transparent",
     },
     "&::-webkit-scrollbar-thumb": {
-      background:
-        theme?.palette?.action?.disabled || "rgba(255, 255, 255, 0.3)",
+      background: alpha(theme.palette.common.white, 0.15),
       borderRadius: 3,
       "&:hover": {
-        background:
-          theme?.palette?.action?.selected || "rgba(255, 255, 255, 0.1)",
+        background: alpha(theme.palette.common.white, 0.25),
       },
     },
   },
 
   activityItem: {
-    padding: theme?.spacing(1) || 0,
-    borderRadius: theme?.shape?.borderRadius || 8,
-    backgroundColor:
-      theme?.palette?.action?.hover || "rgba(255, 255, 255, 0.05)",
+    padding: theme.spacing(1.5),
+    borderRadius: 12,
+    backgroundColor: alpha(theme.palette.common.white, 0.05),
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
+    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+    "&:hover": {
+      backgroundColor: alpha(theme.palette.common.white, 0.08),
+    },
   },
 
   activityHeader: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: theme?.spacing(0.5) || 0,
+    marginBottom: theme.spacing(0.5),
   },
 
   activityAction: {
-    fontWeight: 500,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    fontSize: "0.8125rem",
   },
 }));

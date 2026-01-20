@@ -59,7 +59,7 @@ function AppContent() {
     };
   }, []); // Empty dependency array - only run once on mount
 
-  if(!theme){
+  if (!theme) {
     return null;
   }
   console.log("theme", theme);
@@ -70,18 +70,7 @@ function AppContent() {
         className={`${classes.sidebarContainer} ${isSidebarCollapsed ? "collapsed" : ""}`}
       >
         <Box className={classes.sidebarWrapper}>
-          <LeftSidebar
-            isCollapsed={isSidebarCollapsed}
-            setIsCollapsed={setIsSidebarCollapsed}
-          />
-        </Box>
-
-        {/* Toggle Button */}
-        <Box
-          className={`${classes.toggleButton} ${isSidebarCollapsed ? "collapsed" : ""}`}
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        >
-          {isSidebarCollapsed ? <ArrowCircleRight /> : <ArrowCircleLeft />}
+          <LeftSidebar />
         </Box>
       </Box>
 

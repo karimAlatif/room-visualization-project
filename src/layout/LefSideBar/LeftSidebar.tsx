@@ -1,272 +1,274 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { Box, Typography, useTheme } from "@mui/material";
+import { useFarmStore } from "src/shared/store";
+import { TreeListItem } from "shared/components/TreeListItem";
+import { StatsRow } from "shared/components/StatsRow/StatsRow";
+import { clsx } from "clsx";
+import { useLeftSidebarStyles } from "./LeftSidebar.styles";
 import {
-  Box,
-  Typography,
-  useTheme,
-  Icon,
-} from '@mui/material';
-import { useFarmStore } from 'src/shared/store';
-import { StatusCard } from 'shared/components/StatusCard';
-import { AlertItem } from 'shared/components/AlertItem';
-import { TreeListItem } from 'shared/components/TreeListItem';
-import { clsx } from 'clsx';
-import { useLeftSidebarStyles } from './LeftSidebar.styles';
-import { Dashboard, Park, BugReport, WbSunny, CrisisAlert, BatteryCharging90, FavoriteBorder, AddAlert, Menu, Summarize } from '@mui/icons-material';
+  Park,
+  SmartToy,
+  Thermostat,
+  FiberManualRecord,
+} from "@mui/icons-material";
 
-
-
-
-interface LeftSidebarProps {
-  isCollapsed?: boolean;
-  setIsCollapsed?: (collapsed: boolean) => void;
-}
-
-export const LeftSidebar = ({ isCollapsed = false, setIsCollapsed }: LeftSidebarProps) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'trees'>('overview');
+export const LeftSidebar = () => {
+  const [activeTab, setActiveTab] = useState<"overview" | "trees">("overview");
   const theme = useTheme();
   const classes = useLeftSidebarStyles();
 
-  const { palms, robots, alerts, temperature, selectedPalmId, selectPalm } = useFarmStore();
+  const { palms, robots, temperature, selectedPalmId, selectPalm } =
+    useFarmStore();
 
-  const healthyCount = palms.filter(p => p.status === 'healthy').length;
-  const warningCount = palms.filter(p => p.status === 'warning').length;
-  const criticalCount = palms.filter(p => p.status === 'critical').length;
-  const activeRobots = robots.filter(r => r.status !== 'idle').length;
-  const criticalBattery = robots.filter(r => r.battery < 20).length;
+  const healthyCount = palms.filter((p) => p.status === "healthy").length;
+  const warningCount = palms.filter((p) => p.status === "warning").length;
+  const criticalCount = palms.filter((p) => p.status === "critical").length;
+  const unknownCount =
+    palms.length - healthyCount - warningCount - criticalCount;
+  const activeRobots = robots.filter((r) => r.status !== "idle").length;
+  const healthyPercent =
+    palms.length > 0 ? Math.round((healthyCount / palms.length) * 100) : 0;
+
+  // Calculate donut chart segments
+  const circumference = 2 * Math.PI * 42;
+  const healthyDash =
+    palms.length > 0 ? (healthyCount / palms.length) * circumference : 0;
+  const warningDash =
+    palms.length > 0 ? (warningCount / palms.length) * circumference : 0;
+  const criticalDash =
+    palms.length > 0 ? (criticalCount / palms.length) * circumference : 0;
+  const unknownDash =
+    palms.length > 0 ? (unknownCount / palms.length) * circumference : 0;
 
   return (
-    <Box className={`${classes.sidebar} ${isCollapsed ? classes.sidebarCollapsed : classes.sidebarExpanded}`}>
-      {/* Header */}
+    <Box className={`${classes.sidebar} ${classes.sidebarExpanded}`}>
+      {/* Header - PalmGuard */}
       <Box className={classes.header}>
-        <Box className={`${classes.headerTitle} ${isCollapsed ? classes.headerTitleCollapsed : ''}`}>
+        <Box className={`${classes.headerTitle}`}>
           <Box className={classes.headerIcon}>
-            <Dashboard />
+            <Park />
           </Box>
-          <Typography className={classes.titleText}>Farm Control</Typography>
+          <Box>
+            <Typography className={classes.titleText}>PalmGuard</Typography>
+            <Typography className={classes.subtitleText}>
+              Observatory Mode
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
-      {/* Collapsed Content */}
-      <Box className={`${classes.collapsedContent} ${!isCollapsed ? classes.collapsedContentHidden : ''}`}>
-        <Box
-          className={classes.collapsedIconButton}
-          onClick={() => {
-            setIsCollapsed?.(false);
-            setActiveTab('overview');
-          }}
-        >
-          <Dashboard className={classes.collapsedIcon} />
-        </Box>
-        <Box
-          className={classes.collapsedIconButton}
-          onClick={() => {
-            setIsCollapsed?.(false);
-            setActiveTab('trees');
-          }}
-        >
-          <Park className={classes.collapsedIcon} />
-        </Box>
-      </Box>
-
-      {/* Tabs */}
-      <Box className={`${classes.tabsContainer} ${isCollapsed ? classes.tabsContainerHidden : ''}`}>
+      {/* Tabs - Overview | Trees */}
+      <Box className={`${classes.tabsContainer}`}>
         <button
-          onClick={() => setActiveTab('overview')}
+          onClick={() => setActiveTab("overview")}
           className={clsx(
             classes.tabButton,
-            activeTab === 'overview' && classes.tabButtonActive
+            activeTab === "overview" && classes.tabButtonActive,
           )}
         >
-          <Dashboard />
           Overview
         </button>
         <button
-          onClick={() => setActiveTab('trees')}
+          onClick={() => setActiveTab("trees")}
           className={clsx(
             classes.tabButton,
-            activeTab === 'trees' && classes.tabButtonActive
+            activeTab === "trees" && classes.tabButtonActive,
           )}
         >
-          <Park />
           Trees
         </button>
       </Box>
 
       {/* Tab Content */}
-      <Box className={`${classes.tabContent} ${isCollapsed ? classes.tabContentHidden : ''}`}>
-        {activeTab === 'overview' && (
+      <Box className={`${classes.tabContent} `}>
+        {activeTab === "overview" && (
           <>
-            {/* Summary Section */}
-            <Box className={classes.section}>
-              <Box className={classes.sectionHeader}>
-                <Box className={classes.sectionIcon}>
-                  <Summarize />
-                </Box>
-                <Typography className={classes.sectionTitle}>Summary</Typography>
-              </Box>
-              <Box className={classes.cardsGrid}>
-                <StatusCard
-                  title="Total Trees"
-                  value={palms.length}
-                  icon={<Park />}
-                />
-                <StatusCard
-                  title="Active Units"
-                  value={`${activeRobots}/${robots.length}`}
-                  icon={<BugReport />}
-                />
-                <StatusCard
-                  title="Temperature"
-                  value={`${temperature}°C`}
-                  icon={<WbSunny />}
-                />
-                <StatusCard
-                  title="Missions"
-                  value={activeRobots}
-                  icon={<CrisisAlert />}
-                />
-              </Box>
+            {/* Stats Row 1: Trees | Robots - Combined Card */}
+            <StatsRow
+              leftStat={{
+                icon: <Park />,
+                label: "Trees",
+                value: palms.length,
+              }}
+              rightStat={{
+                icon: <SmartToy />,
+                label: "Robots",
+                value: `${activeRobots}/${robots.length}`,
+              }}
+            />
 
-              {criticalBattery > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <StatusCard
-                    title="Low Battery"
-                    value={criticalBattery}
-                    icon={<BatteryCharging90 />}
-                    variant="critical"
+            {/* Stats Row 2: Healthy | Temp - Combined Card */}
+            <StatsRow
+              leftStat={{
+                icon: <FiberManualRecord />,
+                label: "Healthy",
+                value: `${healthyPercent}%`,
+                iconClassName: classes.statIconHealthy,
+              }}
+              rightStat={{
+                icon: <Thermostat />,
+                label: "Temp",
+                value: `${temperature}°C`,
+                iconClassName: classes.statIconTemp,
+              }}
+            />
+
+            {/* Donut Chart */}
+            <Box className={classes.donutSection}>
+              <Box className={classes.donutWrapper}>
+                <svg width="140" height="140" viewBox="0 0 100 100">
+                  {/* Background circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke={theme.palette.divider}
+                    strokeWidth="10"
+                    opacity={0.3}
                   />
-                </Box>
-              )}
-            </Box>
-
-            {/* Health Status Section */}
-            <Box className={classes.section}>
-              <Box className={classes.sectionHeader}>
-                <Box className={classes.sectionIcon}>
-                  <FavoriteBorder />
-                </Box>
-                <Typography className={classes.sectionTitle}>Health Status</Typography>
-              </Box>
-              <Box className={classes.healthCard}>
-                <Box className={classes.donutContainer}>
-                  <Box className={classes.donutWrapper}>
-                    <svg width="100" height="100" viewBox="0 0 100 100">
+                  {palms.length > 0 && (
+                    <>
+                      {/* Healthy - Green */}
                       <circle
                         cx="50"
                         cy="50"
                         r="42"
                         fill="none"
-                        stroke={theme.palette.divider}
-                        strokeWidth="8"
+                        stroke={theme.palette.success.main}
+                        strokeWidth="10"
+                        strokeDasharray={`${healthyDash} ${circumference}`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 50 50)"
                       />
-                      {palms.length > 0 && (
-                        <>
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="none"
-                            stroke={theme.palette.success.main}
-                            strokeWidth="8"
-                            strokeDasharray={`${(healthyCount / palms.length) * 264} 264`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 50 50)"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="none"
-                            stroke={theme.palette.warning.main}
-                            strokeWidth="8"
-                            strokeDasharray={`${(warningCount / palms.length) * 264} 264`}
-                            strokeDashoffset={`${-(healthyCount / palms.length) * 264}`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 50 50)"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="none"
-                            stroke={theme.palette.error.main}
-                            strokeWidth="8"
-                            strokeDasharray={`${(criticalCount / palms.length) * 264} 264`}
-                            strokeDashoffset={`${-((healthyCount + warningCount) / palms.length) * 264}`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 50 50)"
-                          />
-                        </>
+                      {/* Warning - Yellow */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke={theme.palette.warning.main}
+                        strokeWidth="10"
+                        strokeDasharray={`${warningDash} ${circumference}`}
+                        strokeDashoffset={`${-healthyDash}`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 50 50)"
+                      />
+                      {/* Critical - Red */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke={theme.palette.error.main}
+                        strokeWidth="10"
+                        strokeDasharray={`${criticalDash} ${circumference}`}
+                        strokeDashoffset={`${-(healthyDash + warningDash)}`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 50 50)"
+                      />
+                      {/* Unknown - Blue */}
+                      {unknownCount > 0 && (
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="42"
+                          fill="none"
+                          stroke={theme.palette.info.main}
+                          strokeWidth="10"
+                          strokeDasharray={`${unknownDash} ${circumference}`}
+                          strokeDashoffset={`${-(healthyDash + warningDash + criticalDash)}`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 50 50)"
+                        />
                       )}
-                    </svg>
-                    <Box className={classes.donutCenter}>
-                      <Typography className={classes.donutCenterText}>{palms.length}</Typography>
-                      <Typography className={classes.donutCenterLabel}>Total</Typography>
-                    </Box>
-                  </Box>
-                </Box>
-                <Box className={classes.statusGrid}>
-                  <Box className={classes.statusItem}>
-                    <Box className={classes.statusLabel}>
-                      <Box className={`${classes.statusDot} ${classes.statusDotHealthy}`} />
-                      <Typography className={classes.statusLabelText}>Healthy</Typography>
-                    </Box>
-                    <Typography className={`${classes.statusValue} ${classes.statusValueHealthy}`}>{healthyCount}</Typography>
-                  </Box>
-                  <Box className={classes.statusItem}>
-                    <Box className={classes.statusLabel}>
-                      <Box className={`${classes.statusDot} ${classes.statusDotWarning}`} />
-                      <Typography className={classes.statusLabelText}>Warning</Typography>
-                    </Box>
-                    <Typography className={`${classes.statusValue} ${classes.statusValueWarning}`}>{warningCount}</Typography>
-                  </Box>
-                  <Box className={classes.statusItem}>
-                    <Box className={classes.statusLabel}>
-                      <Box className={`${classes.statusDot} ${classes.statusDotCritical}`} />
-                      <Typography className={classes.statusLabelText}>Critical</Typography>
-                    </Box>
-                    <Typography className={`${classes.statusValue} ${classes.statusValueCritical}`}>{criticalCount}</Typography>
-                  </Box>
+                    </>
+                  )}
+                </svg>
+                <Box className={classes.donutCenter}>
+                  <Typography className={classes.donutCenterValue}>
+                    {healthyCount}
+                  </Typography>
+                  <Typography className={classes.donutCenterLabel}>
+                    Healthy
+                  </Typography>
                 </Box>
               </Box>
             </Box>
 
-            {/* Alerts Section */}
-            <Box className={classes.section}>
-              <Box className={classes.sectionHeader}>
-                <Box className={classes.sectionIcon}>
-                  <AddAlert />
-                </Box>
-                <Typography className={classes.sectionTitle}>Active Alerts</Typography>
+            {/* Status Legend - Horizontal */}
+            <Box className={classes.statusLegend}>
+              <Box className={classes.legendItem}>
+                <Box
+                  className={`${classes.legendDot} ${classes.legendDotHealthy}`}
+                />
+                <Typography className={classes.legendValue}>
+                  {healthyCount}
+                </Typography>
               </Box>
-              <Box className={classes.alertsList}>
-                {alerts.length > 0 ? (
-                  alerts.slice(0, 5).map((alert) => (
-                    <AlertItem
-                      key={alert.id}
-                      alert={alert}
-                      onClick={() => alert.palmId && selectPalm(alert.palmId)}
-                    />
-                  ))
-                ) : (
-                  <Box className={classes.emptyState}>
-                    <AddAlert className={classes.emptyStateIcon} />
-                    <Typography>No active alerts</Typography>
+              <Box className={classes.legendItem}>
+                <Box
+                  className={`${classes.legendDot} ${classes.legendDotWarning}`}
+                />
+                <Typography className={classes.legendValue}>
+                  {warningCount}
+                </Typography>
+              </Box>
+              <Box className={classes.legendItem}>
+                <Box
+                  className={`${classes.legendDot} ${classes.legendDotCritical}`}
+                />
+                <Typography className={classes.legendValue}>
+                  {criticalCount}
+                </Typography>
+              </Box>
+              <Box className={classes.legendItem}>
+                <Box
+                  className={`${classes.legendDot} ${classes.legendDotUnknown}`}
+                />
+                <Typography className={classes.legendValue}>
+                  {unknownCount > 0 ? unknownCount : palms.length}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Robot Fleet Section */}
+            <Box className={classes.robotFleetSection}>
+              <Typography className={classes.robotFleetTitle}>
+                ROBOT FLEET
+              </Typography>
+              <Box className={classes.robotList}>
+                {robots.map((robot) => (
+                  <Box key={robot.id} className={classes.robotItem}>
+                    <Box className={classes.robotInfo}>
+                      <SmartToy className={classes.robotIcon} />
+                      <Typography className={classes.robotName}>
+                        {robot.id}
+                      </Typography>
+                    </Box>
+                    <Box className={classes.robotStatus}>
+                      <Typography className={classes.robotStatusText}>
+                        {robot.status === "idle" ? "idle" : robot.status}
+                      </Typography>
+                      <Box
+                        className={`${classes.robotStatusBar} ${
+                          robot.status === "idle"
+                            ? classes.robotStatusIdle
+                            : robot.status === "moving"
+                              ? classes.robotStatusWorking
+                              : classes.robotStatusCharging
+                        }`}
+                      />
+                    </Box>
                   </Box>
-                )}
+                ))}
               </Box>
             </Box>
           </>
         )}
 
-        {activeTab === 'trees' && (
-          <Box className={classes.section}>
-            <Box className={classes.sectionHeader}>
-              <Box className={classes.sectionIcon}>
-                <Menu />
-              </Box>
-              <Typography className={classes.sectionTitle}>Tree List</Typography>
-            </Box>
+        {activeTab === "trees" && (
+          <Box className={classes.treesSection}>
             <Box className={classes.treesList}>
               {palms.length > 0 ? (
                 palms.map((palm) => (

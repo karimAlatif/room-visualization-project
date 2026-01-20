@@ -1,4 +1,4 @@
-import { Theme } from '@mui/material/styles';
+import { Theme, alpha } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
 
 export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
@@ -13,19 +13,15 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
   },
   sidebarCollapsed: {},
   sidebarExpanded: {},
+
+  // Header - PalmGuard
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    padding: '16px 20px',
-    borderBottom: `1px solid ${theme?.palette?.divider || 'rgba(148, 163, 184, 0.08)'}`,
-    minHeight: 72,
-    background: `linear-gradient(90deg, ${theme?.palette?.primary?.main || '#4ade80'}06, transparent)`,
+    padding: '16px 16px',
+    minHeight: 64,
     transition: 'all 0.3s ease',
-    '@media (max-width: 768px)': {
-      padding: '12px 16px',
-      minHeight: 64,
-    },
   },
   headerTitle: {
     display: 'flex',
@@ -45,23 +41,33 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 10,
-    background: `linear-gradient(135deg, ${theme?.palette?.primary?.main || '#4ade80'}18, ${theme?.palette?.primary?.main || '#4ade80'}05)`,
-    border: `1px solid ${theme?.palette?.primary?.main || '#4ade80'}25`,
-    color: theme?.palette?.primary?.main || '#4ade80',
+    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.info.main})`,
+    color: theme.palette.common.white,
     flexShrink: 0,
-    '& svg, & .MuiIcon-root': {
-      fontSize: 22,
+    '& svg': {
+      fontSize: 20,
     },
   },
   titleText: {
     fontWeight: 700,
-    color: theme?.palette?.text?.primary || '#f1f5f9',
-    fontSize: '1.1rem',
-    letterSpacing: '-0.02em',
+    color: theme.palette.text.primary,
+    fontSize: '1.25rem',
+    letterSpacing: '-0.01em',
+    lineHeight: 1.2,
+    textShadow: `0 0 20px ${alpha(theme.palette.common.white, 0.3)}`,
   },
+  subtitleText: {
+    fontSize: '0.8rem',
+    color: theme.palette.text.secondary,
+    fontWeight: 400,
+    marginTop: 2,
+    textShadow: `0 0 10px ${alpha(theme.palette.common.white, 0.2)}`,
+  },
+
+  // Collapsed state
   collapsedContent: {
     display: 'flex',
     flexDirection: 'column',
@@ -72,7 +78,7 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
     transform: 'scale(1)',
     transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
     position: 'absolute',
-    top: 88,
+    top: 72,
     left: 0,
     right: 0,
   },
@@ -82,40 +88,36 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
     transform: 'scale(0.85)',
   },
   collapsedIconButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    background: `linear-gradient(135deg, ${theme?.palette?.action?.disabledBackground || 'rgba(148, 163, 184, 0.08)'} 0%, transparent 100%)`,
-    border: `1px solid ${theme?.palette?.divider || 'rgba(148, 163, 184, 0.1)'}`,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
     transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-    color: theme?.palette?.text?.secondary || '#94a3b8',
+    color: theme.palette.text.secondary,
     '&:hover': {
-      background: `linear-gradient(135deg, ${theme?.palette?.primary?.main || '#4ade80'}12, ${theme?.palette?.primary?.main || '#4ade80'}04)`,
-      borderColor: `${theme?.palette?.primary?.main || '#4ade80'}35`,
-      color: theme?.palette?.primary?.main || '#4ade80',
-      transform: 'scale(1.08)',
-      boxShadow: `0 6px 20px ${theme?.palette?.primary?.main || '#4ade80'}18`,
+      backgroundColor: alpha(theme.palette.common.white, 0.12),
+      color: theme.palette.primary.main,
     },
   },
   collapsedIcon: {
-    fontSize: '22px !important',
+    fontSize: '20px !important',
   },
+
+  // Tabs - Overview | Trees
   tabsContainer: {
     display: 'flex',
-    padding: '8px 12px',
-    gap: 8,
-    borderBottom: `1px solid ${theme?.palette?.divider || 'rgba(148, 163, 184, 0.08)'}`,
+    padding: '0 16px 16px',
+    gap: 0,
     opacity: 1,
     transform: 'translateY(0)',
-    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-    background: `${theme?.palette?.background?.paper || '#1e293b'}30`,
-    '@media (max-width: 768px)': {
-      padding: '6px 10px',
-    },
+    transition: 'all 0.3s ease-in-out',
   },
   tabsContainerHidden: {
     opacity: 0,
@@ -124,41 +126,53 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
   },
   tabButton: {
     flex: 1,
-    padding: '10px 14px',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderRadius: 8,
+    padding: '12px 24px',
+    fontSize: '1rem',
+    fontWeight: 500,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: 'blur(15px)',
+    WebkitBackdropFilter: 'blur(15px)',
+    border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+    borderRadius: 0,
     cursor: 'pointer',
-    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-    color: theme?.palette?.text?.secondary || '#94a3b8',
+    transition: 'all 0.3s ease-in-out',
+    color: theme.palette.text.secondary,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    '& svg, & .MuiIcon-root': {
-      fontSize: 18,
+    textShadow: `0 0 10px ${alpha(theme.palette.common.white, 0.15)}`,
+    '&:first-child': {
+      borderRadius: '12px 0 0 12px',
+      borderRight: 'none',
+    },
+    '&:last-child': {
+      borderRadius: '0 12px 12px 0',
     },
     '&:hover': {
-      color: theme?.palette?.text?.primary || '#f1f5f9',
-      background: `${theme?.palette?.action?.hover || 'rgba(74, 222, 128, 0.06)'}`,
-    },
-    '@media (max-width: 768px)': {
-      padding: '8px 10px',
-      fontSize: '0.75rem',
+      color: theme.palette.text.primary,
+      backgroundColor: alpha(theme.palette.common.white, 0.15),
+      transform: 'translateY(-1px)',
+      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.1)}, 0 0 20px ${alpha(theme.palette.primary.main, 0.1)}`,
+      textShadow: `0 0 15px ${alpha(theme.palette.common.white, 0.3)}`,
     },
   },
   tabButtonActive: {
-    color: theme?.palette?.primary?.main || '#4ade80',
-    background: `linear-gradient(135deg, ${theme?.palette?.primary?.main || '#4ade80'}12, ${theme?.palette?.primary?.main || '#4ade80'}04)`,
-    boxShadow: `0 2px 8px ${theme?.palette?.primary?.main || '#4ade80'}12`,
+    color: theme.palette.text.primary,
+    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.25)}, ${alpha(theme.palette.info.main, 0.2)})`,
+    backgroundColor: alpha(theme.palette.common.white, 0.25),
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    fontWeight: 600,
+    boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.2)}, 0 0 30px ${alpha(theme.palette.primary.main, 0.15)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.3)}`,
+    textShadow: `0 0 20px ${alpha(theme.palette.common.white, 0.4)}`,
   },
+
+  // Tab Content
   tabContent: {
     flex: 1,
     overflowY: 'auto',
     overflowX: 'hidden',
-    padding: 16,
+    padding: '0 16px 16px',
     opacity: 1,
     transform: 'translateX(0)',
     transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -169,11 +183,8 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
       background: 'transparent',
     },
     '&::-webkit-scrollbar-thumb': {
-      background: theme?.palette?.divider || 'rgba(148, 163, 184, 0.15)',
+      background: alpha(theme.palette.common.white, 0.15),
       borderRadius: 2,
-    },
-    '@media (max-width: 768px)': {
-      padding: 12,
     },
   },
   tabContentHidden: {
@@ -181,72 +192,107 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
     pointerEvents: 'none',
     transform: 'translateX(-16px)',
   },
-  section: {
-    marginBottom: 24,
-    '@media (max-width: 768px)': {
-      marginBottom: 20,
+
+  // Stats Row - Combined Card
+  statsRow: {
+    display: 'flex',
+    alignItems: 'stretch',
+    gap: 0,
+    marginBottom: 16,
+    padding: '24px 20px',
+    borderRadius: 20,
+    backgroundColor: alpha(theme.palette.common.white, 0.12),
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${alpha(theme.palette.common.white, 0.25)}`,
+    boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.15)}, 0 0 60px ${alpha(theme.palette.primary.main, 0.08)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.2)}`,
+    transition: 'all 0.3s ease-in-out',
+    position: 'relative' as const,
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.common.white, 0.18),
+      transform: 'translateY(-2px)',
+      boxShadow: `0 12px 40px ${alpha(theme.palette.common.black, 0.18)}, 0 0 80px ${alpha(theme.palette.primary.main, 0.12)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.25)}`,
+    },
+    '&::after': {
+      content: '""',
+      position: 'absolute' as const,
+      left: '50%',
+      top: '20%',
+      bottom: '20%',
+      width: 1,
+      background: `linear-gradient(to bottom, transparent, ${alpha(theme.palette.common.white, 0.4)}, transparent)`,
+      boxShadow: `0 0 8px ${alpha(theme.palette.common.white, 0.3)}`,
     },
   },
-  sectionHeader: {
+  statCard: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+  statHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 10,
   },
-  sectionIcon: {
+  statIcon: {
+    fontSize: '26px !important',
+    color: theme.palette.text.secondary,
+    opacity: 0.8,
+    filter: `drop-shadow(0 0 8px ${alpha(theme.palette.common.white, 0.3)})`,
+  },
+  statIconHealthy: {
+    fontSize: '20px !important',
+    color: theme.palette.success.main,
+    filter: `drop-shadow(0 0 8px ${alpha(theme.palette.success.main, 0.5)})`,
+  },
+  statIconTemp: {
+    fontSize: '24px !important',
+    color: theme.palette.error.light,
+    filter: `drop-shadow(0 0 8px ${alpha(theme.palette.error.light, 0.5)})`,
+  },
+  statLabel: {
+    fontSize: '1.1rem',
+    color: theme.palette.text.secondary,
+    fontWeight: 500,
+    letterSpacing: '0.02em',
+    textShadow: `0 0 12px ${alpha(theme.palette.common.white, 0.2)}`,
+  },
+  statValue: {
+    fontSize: '3.5rem',
+    fontWeight: 700,
+    color: theme.palette.text.primary,
+    lineHeight: 1,
+    textShadow: `0 2px 12px ${alpha(theme.palette.common.black, 0.15)}, 0 0 30px ${alpha(theme.palette.common.white, 0.15)}`,
+    marginTop: 8,
+  },
+
+  // Donut Section
+  donutSection: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    background: `${theme?.palette?.primary?.main || '#4ade80'}10`,
-    color: theme?.palette?.primary?.main || '#4ade80',
-    '& svg, & .MuiIcon-root': {
-      fontSize: 16,
-    },
-  },
-  sectionTitle: {
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    color: theme?.palette?.text?.secondary || '#94a3b8',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-  },
-  cardsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: 12,
-    '@media (max-width: 400px)': {
-      gridTemplateColumns: '1fr',
-      gap: 10,
-    },
-  },
-  healthCard: {
-    border: `1px solid ${theme?.palette?.divider || 'rgba(148, 163, 184, 0.08)'}`,
-    borderRadius: 14,
-    padding: 16,
-    background: `linear-gradient(135deg, ${theme?.palette?.background?.paper || '#1e293b'}80 0%, ${theme?.palette?.background?.default || '#0f172a'}60 100%)`,
-    boxShadow: `0 4px 12px ${theme?.palette?.mode === 'dark' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.08)'}`,
-    '@media (max-width: 768px)': {
-      padding: 14,
-      borderRadius: 12,
-    },
-  },
-  donutContainer: {
-    display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+    padding: '20px',
+    marginBottom: 12,
+    borderRadius: 20,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+    boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}, 0 0 40px ${alpha(theme.palette.primary.main, 0.08)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.15)}`,
+    transition: 'all 0.3s ease-in-out',
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.common.white, 0.12),
+      boxShadow: `0 6px 24px ${alpha(theme.palette.common.black, 0.12)}, 0 0 50px ${alpha(theme.palette.primary.main, 0.12)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.2)}`,
+    },
   },
   donutWrapper: {
     position: 'relative',
-    width: 100,
-    height: 100,
-    '@media (max-width: 768px)': {
-      width: 90,
-      height: 90,
-    },
+    width: 140,
+    height: 140,
   },
   donutCenter: {
     position: 'absolute',
@@ -259,100 +305,174 @@ export const useLeftSidebarStyles = makeStyles((theme: Theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  donutCenterText: {
-    fontSize: '1.5rem',
-    fontWeight: 800,
-    color: theme?.palette?.text?.primary || '#f1f5f9',
+  donutCenterValue: {
+    fontSize: '2.5rem',
+    fontWeight: 700,
+    color: theme.palette.text.primary,
     lineHeight: 1,
-    '@media (max-width: 768px)': {
-      fontSize: '1.25rem',
-    },
+    textShadow: `0 2px 12px ${alpha(theme.palette.common.black, 0.15)}, 0 0 40px ${alpha(theme.palette.common.white, 0.2)}`,
   },
   donutCenterLabel: {
-    fontSize: '0.65rem',
-    color: theme?.palette?.text?.secondary || '#94a3b8',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    fontSize: '0.9rem',
+    color: theme.palette.text.secondary,
+    marginTop: 4,
+    fontWeight: 500,
+    textShadow: `0 0 15px ${alpha(theme.palette.common.white, 0.2)}`,
   },
-  statusGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 10,
-    textAlign: 'center',
-  },
-  statusItem: {
+
+  // Status Legend - Horizontal
+  statusLegend: {
     display: 'flex',
-    flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 10,
-    background: `${theme?.palette?.action?.disabledBackground || 'rgba(148, 163, 184, 0.04)'}`,
-    transition: 'all 0.2s ease',
+    gap: 16,
+    marginBottom: 20,
+    padding: '12px 16px',
+    borderRadius: 16,
+    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+    boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.1)}, 0 0 30px ${alpha(theme.palette.primary.main, 0.06)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.15)}`,
+    transition: 'all 0.3s ease-in-out',
     '&:hover': {
-      transform: 'translateY(-1px)',
-      background: `${theme?.palette?.action?.hover || 'rgba(148, 163, 184, 0.06)'}`,
+      backgroundColor: alpha(theme.palette.common.white, 0.12),
+      boxShadow: `0 6px 20px ${alpha(theme.palette.common.black, 0.12)}, 0 0 40px ${alpha(theme.palette.primary.main, 0.1)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.2)}`,
     },
   },
-  statusLabel: {
+  legendItem: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    marginBottom: 4,
+    gap: 6,
   },
-  statusLabelText: {
-    fontSize: '0.65rem',
-    color: theme?.palette?.text?.secondary || '#94a3b8',
-    fontWeight: 500,
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: '50%',
+    boxShadow: '0 0 10px currentColor, 0 0 16px currentColor, 0 0 24px currentColor',
   },
-  statusValue: {
+  legendDotHealthy: {
+    backgroundColor: theme.palette.success.main,
+  },
+  legendDotWarning: {
+    backgroundColor: theme.palette.warning.main,
+  },
+  legendDotCritical: {
+    backgroundColor: theme.palette.error.main,
+  },
+  legendDotUnknown: {
+    backgroundColor: theme.palette.info.main,
+  },
+  legendValue: {
     fontSize: '1rem',
-    fontFamily: 'monospace',
-    fontWeight: 700,
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    textShadow: `0 0 15px ${alpha(theme.palette.common.white, 0.2)}`,
   },
-  statusValueHealthy: {
-    color: theme?.palette?.success?.main || '#10b981',
+
+  // Robot Fleet Section
+  robotFleetSection: {
+    marginTop: 8,
   },
-  statusValueWarning: {
-    color: theme?.palette?.warning?.main || '#f59e0b',
+  robotFleetTitle: {
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    color: theme.palette.text.secondary,
+    letterSpacing: '0.1em',
+    marginBottom: 12,
+    textTransform: 'uppercase' as const,
+    textShadow: `0 0 12px ${alpha(theme.palette.common.white, 0.2)}`,
   },
-  statusValueCritical: {
-    color: theme?.palette?.error?.main || '#ef4444',
-  },
-  alertsList: {
+  robotList: {
     display: 'flex',
     flexDirection: 'column',
+    gap: 8,
+  },
+  robotItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 16px',
+    borderRadius: 16,
+    backgroundColor: alpha(theme.palette.common.white, 0.1),
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: `1px solid ${alpha(theme.palette.common.white, 0.2)}`,
+    boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.1)}, 0 0 30px ${alpha(theme.palette.info.main, 0.05)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.15)}`,
+    transition: 'all 0.3s ease-in-out',
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.common.white, 0.15),
+      transform: 'translateY(-2px)',
+      boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.12)}, 0 0 40px ${alpha(theme.palette.info.main, 0.1)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.2)}`,
+    },
+  },
+  robotInfo: {
+    display: 'flex',
+    alignItems: 'center',
     gap: 10,
+  },
+  robotIcon: {
+    fontSize: '22px !important',
+    color: theme.palette.info.main,
+    filter: `drop-shadow(0 0 10px ${alpha(theme.palette.info.main, 0.5)})`,
+  },
+  robotName: {
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    textShadow: `0 0 15px ${alpha(theme.palette.common.white, 0.2)}`,
+  },
+  robotStatus: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  robotStatusText: {
+    fontSize: '0.85rem',
+    color: theme.palette.text.secondary,
+    textShadow: `0 0 10px ${alpha(theme.palette.common.white, 0.15)}`,
+  },
+  robotStatusBar: {
+    width: 32,
+    height: 7,
+    borderRadius: 4,
+    transition: 'all 0.3s ease-in-out',
+  },
+  robotStatusIdle: {
+    background: `linear-gradient(90deg, ${theme.palette.success.main}, ${theme.palette.success.light})`,
+    boxShadow: `0 0 16px ${theme.palette.success.main}, 0 0 28px ${alpha(theme.palette.success.main, 0.5)}, 0 0 40px ${alpha(theme.palette.success.main, 0.3)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.4)}`,
+  },
+  robotStatusWorking: {
+    background: `linear-gradient(90deg, ${theme.palette.warning.main}, ${theme.palette.warning.light})`,
+    boxShadow: `0 0 16px ${theme.palette.warning.main}, 0 0 28px ${alpha(theme.palette.warning.main, 0.5)}, 0 0 40px ${alpha(theme.palette.warning.main, 0.3)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.4)}`,
+  },
+  robotStatusCharging: {
+    background: `linear-gradient(90deg, ${theme.palette.info.main}, ${theme.palette.info.light})`,
+    boxShadow: `0 0 16px ${theme.palette.info.main}, 0 0 28px ${alpha(theme.palette.info.main, 0.5)}, 0 0 40px ${alpha(theme.palette.info.main, 0.3)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.4)}`,
+  },
+
+  // Trees Section
+  treesSection: {
+    paddingTop: 8,
   },
   treesList: {
     display: 'flex',
     flexDirection: 'column',
     gap: 8,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    boxShadow: '0 0 6px currentColor',
-  },
-  statusDotHealthy: {
-    backgroundColor: theme?.palette?.success?.main || '#10b981',
-  },
-  statusDotWarning: {
-    backgroundColor: theme?.palette?.warning?.main || '#f59e0b',
-  },
-  statusDotCritical: {
-    backgroundColor: theme?.palette?.error?.main || '#ef4444',
-  },
+
+  // Empty State
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 28,
-    color: theme?.palette?.text?.secondary || '#94a3b8',
+    padding: 32,
+    color: theme.palette.text.secondary,
     textAlign: 'center',
+    backgroundColor: alpha(theme.palette.common.white, 0.05),
+    borderRadius: 16,
+    border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
     '& .MuiTypography-root': {
       fontSize: '0.85rem',
     },
