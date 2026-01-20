@@ -5,7 +5,7 @@ export type RobotStatus = "idle" | "moving" | "scanning" | "returning";
 export type AlertSeverity = "high" | "medium" | "info";
 
 export const FarmSize = 200;
-export const FarmNumberOfPalms = 2;
+export const FarmNumberOfPalms = 150;
 export const FarmNumberOfRobots = 5;
 export const FarmNumberOfAlerts = 5;
 export const FarmNumberOfActivityLogs = 50;

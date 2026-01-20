@@ -2,7 +2,7 @@
 import React, { useEffect, useState, createRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useTheme, Box, Icon } from "@mui/material";
+import { useTheme, Box } from "@mui/material";
 import * as BABYLON from "babylonjs";
 import babylonManager from "./Babylon/babylonManager.js";
 import DesertAmbientAudio from "./shared/components/DesertAmbientAudio.js";
@@ -13,7 +13,6 @@ import ThemeProvider from "shared/theme/ThemeProvider";
 import { useFarmStore } from "./shared/store/index.js";
 import { LeftSidebar } from "./layout/LefSideBar/LeftSidebar";
 import { useAppStyles } from "./App.styles";
-import { ArrowCircleLeft, ArrowCircleRight } from "@mui/icons-material";
 import { RightPanel } from "./layout/RightSideBar/index.js";
 
 const gmRef = createRef<HTMLCanvasElement>();
@@ -28,7 +27,6 @@ function AppContent() {
   const classes = useAppStyles();
   const [, setGameManager] = useState<GameManager>();
   const [isSceneLoading, setIsSceneLoading] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { palms, robots } = useFarmStore();
 
   useEffect(() => {
@@ -66,12 +64,9 @@ function AppContent() {
   return (
     <Box className={classes.appContainer}>
       {/* Sidebar Container */}
-      <Box
-        className={`${classes.sidebarContainer} ${isSidebarCollapsed ? "collapsed" : ""}`}
-      >
-        <Box className={classes.sidebarWrapper}>
-          <LeftSidebar />
-        </Box>
+
+      <Box className={classes.sidebarWrapper}>
+        <LeftSidebar />
       </Box>
 
       {/* Main Content Area */}

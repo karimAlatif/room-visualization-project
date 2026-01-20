@@ -11,15 +11,17 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  Close as CloseIcon,
-  Opacity as OpacityIcon,
-  BugReport as BugReportIcon,
-  CalendarToday as CalendarIcon,
-  SmartToy as BotIcon,
+  X as CloseIcon,
+  Calendar as CalendarIcon,
+  Zap as BotIcon,
   Send as SendIcon,
-  Flight as FlightIcon,
-  Description as DescriptionIcon,
-} from "@mui/icons-material";
+  FileText as DescriptionIcon,
+  Droplets as HydrationIcon,
+  Leaf as NutrientIcon,
+  TreePine as PalmIcon,
+  Clock as HarvestIcon,
+  AlertTriangle as PestIcon,
+} from "lucide-react";
 // import { useFarmStore, Palm, Robot } from "@/store/farmStore";
 import { useStyles } from "./RightSidebar.styles";
 import { useFarmStore } from "src/shared/store";
@@ -29,6 +31,7 @@ interface ProgressBarProps {
   value: number;
   label: string;
   variant?: "default" | "healthy" | "warning" | "critical";
+  icon?: React.ReactNode;
 }
 
 interface PalmDetailsProps {
@@ -43,6 +46,7 @@ const ProgressBar = ({
   value,
   label,
   variant = "default",
+  icon,
 }: ProgressBarProps) => {
   const classes = useStyles();
 
@@ -56,10 +60,17 @@ const ProgressBar = ({
   return (
     <Box className={classes.progressContainer}>
       <Box className={classes.progressHeader}>
-        <Typography variant="caption" className={classes.progressLabel}>
-          {label}
-        </Typography>
-        <Typography variant="caption" className={classes.progressValue}>
+        <Box className={classes.progressLabelWrapper}>
+          {icon && <span className={classes.progressIcon}>{icon}</span>}
+          <Typography variant="caption" className={classes.progressLabel}>
+            {label}
+          </Typography>
+        </Box>
+        <Typography
+          variant="caption"
+          className={classes.progressValue}
+          style={{ color: `var(--progress-color-${getColor()})` }}
+        >
           {value}%
         </Typography>
       </Box>
@@ -67,7 +78,7 @@ const ProgressBar = ({
         variant="determinate"
         value={value}
         color={getColor()}
-        className={classes.progressBar}
+        className={`${classes.progressBar} ${classes[`progressBar-${variant}`]}`}
       />
     </Box>
   );
@@ -77,6 +88,7 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
   const [showRobotSelect, setShowRobotSelect] = useState<boolean>(false);
   const { robots, assignRobotToPalm, addActivityLog } = useFarmStore();
   const classes = useStyles();
+  const theme = useTheme();
 
   const availableRobots = robots.filter(
     (r) => r.status === "idle" && r.battery > 20,
@@ -87,14 +99,14 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
     setShowRobotSelect(false);
   };
 
-  const handleRequestDrone = (): void => {
-    addActivityLog({
-      action: "Drone Requested",
-      details: `Aerial inspection requested for ${palm.id}`,
-      entityType: "palm",
-      entityId: palm.id,
-    });
-  };
+  // const handleRequestDrone = (): void => {
+  //   addActivityLog({
+  //     action: "Drone Requested",
+  //     details: `Aerial inspection requested for ${palm.id}`,
+  //     entityType: "palm",
+  //     entityId: palm.id,
+  //   });
+  // };
 
   const handleLogActivity = (): void => {
     addActivityLog({
@@ -105,52 +117,21 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
     });
   };
 
-  const getStatusConfig = (
-    status: Palm["status"],
-  ): { label: string; color: "success" | "warning" | "error" } => {
-    const configs = {
-      healthy: { label: "Healthy", color: "success" as const },
-      warning: { label: "Warning", color: "warning" as const },
-      critical: { label: "Critical", color: "error" as const },
-    };
-    return configs[status] || configs.healthy;
-  };
-
-  const statusConfig = getStatusConfig(palm.status);
-
   return (
     <Box className={classes.detailsContainer}>
-      {/* Header */}
-      <Box className={classes.header}>
-        <Box>
-          <Typography variant="h6" className={classes.title}>
-            {palm.id}
-          </Typography>
-          <Typography variant="body2" className={classes.subtitle}>
-            {palm.variety}
-          </Typography>
-        </Box>
-        <Chip
-          label={statusConfig.label}
-          color={statusConfig.color}
-          size="small"
-          className={classes.statusChip}
-        />
-      </Box>
-
       {/* Stats */}
       <Box className={classes.statsContainer}>
         <Paper className={classes.glassCard}>
-          <Box className={classes.cardHeader}>
-            <OpacityIcon className={classes.icon} />
-            <Typography variant="caption" className={classes.cardTitle}>
-              Vitals
-            </Typography>
-          </Box>
-
           <ProgressBar
             value={palm.hydration}
             label="Hydration"
+            icon={
+              <HydrationIcon
+                size={18}
+                strokeWidth={2.5}
+                color={theme.palette.primary.main}
+              />
+            }
             variant={
               palm.hydration > 70
                 ? "healthy"
@@ -159,10 +140,19 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
                   : "critical"
             }
           />
+        </Paper>
 
+        <Paper className={classes.glassCard}>
           <ProgressBar
             value={palm.nutrientLevel}
             label="Nutrients"
+            icon={
+              <NutrientIcon
+                size={18}
+                strokeWidth={2.5}
+                color={theme.palette.secondary.main}
+              />
+            }
             variant={
               palm.nutrientLevel > 70
                 ? "healthy"
@@ -171,63 +161,70 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
                   : "critical"
             }
           />
-
-          <Box className={classes.pestContainer}>
-            <Box className={classes.pestLabel}>
-              <BugReportIcon className={classes.icon} />
-              <Typography variant="caption">Pest Probability</Typography>
-            </Box>
-            <Typography
-              variant="body2"
-              className={classes.pestValue}
-              style={{
-                color:
-                  palm.pestProbability > 30
-                    ? "#ef4444"
-                    : palm.pestProbability > 10
-                      ? "#f59e0b"
-                      : "#10b981",
-              }}
-            >
-              {palm.pestProbability}%
-            </Typography>
-          </Box>
         </Paper>
 
         <Paper className={classes.glassCard}>
           <Box className={classes.cardHeader}>
-            <CalendarIcon className={classes.icon} />
+            <CalendarIcon
+              size={16}
+              strokeWidth={2.5}
+              className={classes.icon}
+            />
             <Typography variant="caption" className={classes.cardTitle}>
-              Schedule
+              Schedule & Risk
             </Typography>
           </Box>
 
-          <Box className={classes.infoRow}>
-            <Typography variant="body2" className={classes.infoLabel}>
-              Est. Harvest
-            </Typography>
-            <Typography variant="body2" className={classes.infoValue}>
-              {palm.estimatedHarvest}
-            </Typography>
-          </Box>
+          <Box className={classes.infoGrid}>
+            <Box className={classes.infoCard}>
+              <HarvestIcon size={24} className={classes.infoCardIcon} />
+              <Typography variant="caption" className={classes.infoLabel}>
+                Est. Harvest
+              </Typography>
+              <Typography variant="body2" className={classes.infoValue}>
+                {palm.estimatedHarvest}
+              </Typography>
+            </Box>
 
-          <Box className={classes.infoRow}>
-            <Typography variant="body2" className={classes.infoLabel}>
-              Last Watered
-            </Typography>
-            <Typography variant="body2" className={classes.infoValue}>
-              {palm.lastWatered}
-            </Typography>
+            <Box className={classes.infoDivider} />
+
+            <Box className={classes.infoCard}>
+              <PestIcon
+                size={24}
+                className={classes.infoCardIcon}
+                style={{
+                  color:
+                    palm.pestProbability > 30
+                      ? "#ef4444"
+                      : palm.pestProbability > 10
+                        ? "#f59e0b"
+                        : "#10b981",
+                }}
+              />
+              <Typography variant="caption" className={classes.infoLabel}>
+                Pest Risk
+              </Typography>
+              <Typography
+                variant="body2"
+                className={classes.infoValue}
+                style={{
+                  color:
+                    palm.pestProbability > 30
+                      ? "#ef4444"
+                      : palm.pestProbability > 10
+                        ? "#f59e0b"
+                        : "#10b981",
+                }}
+              >
+                {palm.pestProbability}%
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>
 
       {/* Actions */}
       <Box className={classes.actionsContainer}>
-        <Typography variant="caption" className={classes.actionsTitle}>
-          Actions
-        </Typography>
-
         {showRobotSelect ? (
           <Paper className={classes.glassCard}>
             <Box className={classes.robotSelectHeader}>
@@ -236,7 +233,7 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
                 size="small"
                 onClick={() => setShowRobotSelect(false)}
               >
-                <CloseIcon fontSize="small" />
+                <CloseIcon size={20} strokeWidth={2.5} />
               </IconButton>
             </Box>
             {availableRobots.length > 0 ? (
@@ -250,7 +247,11 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
                   >
                     <Box className={classes.robotButtonContent}>
                       <Box className={classes.robotInfo}>
-                        <BotIcon fontSize="small" color="primary" />
+                        <BotIcon
+                          size={18}
+                          strokeWidth={2.5}
+                          style={{ color: "inherit" }}
+                        />
                         <Typography variant="body2">{robot.id}</Typography>
                       </Box>
                       <Typography variant="caption" color="textSecondary">
@@ -271,7 +272,7 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
             <Button
               fullWidth
               variant="contained"
-              startIcon={<SendIcon />}
+              startIcon={<SendIcon size={18} strokeWidth={2.5} />}
               onClick={() => setShowRobotSelect(true)}
               className={classes.primaryButton}
             >
@@ -280,16 +281,9 @@ const PalmDetails = ({ palm }: PalmDetailsProps) => {
             <Button
               fullWidth
               variant="outlined"
-              startIcon={<FlightIcon />}
-              onClick={handleRequestDrone}
-            >
-              Request Drone
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<DescriptionIcon />}
+              startIcon={<DescriptionIcon size={18} strokeWidth={2.5} />}
               onClick={handleLogActivity}
+              className={classes.defaultButton}
             >
               Log Activity
             </Button>
@@ -391,7 +385,7 @@ const RobotDetails = ({ robot }: RobotDetailsProps) => {
           <Button
             fullWidth
             variant="outlined"
-            startIcon={<BotIcon />}
+            startIcon={<BotIcon size={18} strokeWidth={2.5} />}
             onClick={handleReturnToBase}
             disabled={robot.status === "returning" || robot.status === "idle"}
           >
@@ -404,15 +398,7 @@ const RobotDetails = ({ robot }: RobotDetailsProps) => {
 };
 
 export const RightPanel = () => {
-  const {
-    selectedPalmId,
-    selectedRobotId,
-    palms,
-    robots,
-    activityLogs,
-    selectPalm,
-    selectRobot,
-  } = useFarmStore();
+  const { selectedRobotId, palms, robots, activityLogs } = useFarmStore();
   const theme = useTheme();
   console.log("theme theme theme", theme);
   const classes = useStyles();
@@ -422,12 +408,29 @@ export const RightPanel = () => {
 
   const hasSelection = selectedPalm || selectedRobot;
 
+  const getStatusConfig = (
+    status: Palm["status"],
+  ): { label: string; color: "success" | "warning" | "error" } => {
+    const configs = {
+      healthy: { label: "Healthy", color: "success" as const },
+      warning: { label: "Warning", color: "warning" as const },
+      critical: { label: "Critical", color: "error" as const },
+    };
+    return configs[status] || configs.healthy;
+  };
+
+  const statusConfig = getStatusConfig(selectedPalm && selectedPalm.status);
+
   if (!hasSelection) {
     return (
       <Box className={classes.panel}>
         <Box className={classes.emptyState}>
           <Box className={classes.emptyIcon}>
-            <BotIcon className={classes.emptyIconSvg} />
+            <BotIcon
+              size={32}
+              strokeWidth={2.5}
+              className={classes.emptyIconSvg}
+            />
           </Box>
           <Typography variant="h6" className={classes.emptyTitle}>
             No Selection
@@ -476,9 +479,32 @@ export const RightPanel = () => {
     <Box className={classes.panelWithSelection}>
       {/* Header with close button */}
       <Box className={classes.panelHeader}>
-        <Typography variant="caption" className={classes.panelHeaderTitle}>
-          {selectedPalm ? "Palm Details" : "Robot Details"}
-        </Typography>
+        {selectedPalm && (
+          <Box className={classes.headerWithIcon}>
+            <Box className={classes.headerIconWrapper}>
+              <PalmIcon
+                size={32}
+                strokeWidth={2}
+                className={classes.headerIcon}
+              />
+            </Box>
+            <Box className={classes.headerContent}>
+              <Typography variant="h6" className={classes.title}>
+                {selectedPalm.id}
+              </Typography>
+              <Typography variant="body2" className={classes.subtitle}>
+                {selectedPalm.variety}
+              </Typography>
+            </Box>
+            <Chip
+              label={statusConfig.label}
+              color={statusConfig.color}
+              size="small"
+              className={classes.statusChip}
+            />
+          </Box>
+        )}
+
         <IconButton
           size="small"
           onClick={() => {
@@ -486,7 +512,7 @@ export const RightPanel = () => {
             // selectRobot(null);
           }}
         >
-          <CloseIcon fontSize="small" />
+          <CloseIcon size={20} color="white" strokeWidth={2.5} />
         </IconButton>
       </Box>
 
