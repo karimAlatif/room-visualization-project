@@ -32,10 +32,6 @@ function AppContent() {
   useEffect(() => {
     if (!gmRef.current) return;
 
-    console.log(
-      "trrrrrrrrrrrrrrrrr RRRRRRRRRRRRRRRRRRRRRRR ZZZZZZZZZZZZZZZZZZ",
-      palms.length,
-    );
     const { GManger }: { GManger: GameManager } = babylonManager(
       gmRef.current,
       {
@@ -87,7 +83,7 @@ function AppContent() {
         )}
       </Box>
 
-      <Box className={classes.sidebarWrapper} sx={{ right: 0 }}>
+      <Box>
         <RightPanel />
       </Box>
     </Box>
