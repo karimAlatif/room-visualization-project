@@ -6,7 +6,7 @@ export type RobotStatus = "idle" | "moving" | "scanning" | "returning";
 export type AlertSeverity = "high" | "medium" | "info";
 
 export const FarmSize = 200;
-export const FarmNumberOfPalms = 100;
+export const FarmNumberOfPalms = 25;
 export const FarmNumberOfRobots = 5;
 export const FarmNumberOfAlerts = 5;
 export const FarmNumberOfActivityLogs = 50;
@@ -69,20 +69,24 @@ export interface ActivityLog {
   entityId: string;
 }
 
+export interface Entity {
+  id: string;
+  type: "palm" | "robot";
+  entity?: Palm | Robot;
+}
+
 export interface FarmState {
   palms: Palm[];
   robots: Robot[];
   alerts: Alert[];
   activityLogs: ActivityLog[];
-  selectedPalmId?: string;
-  selectedRobotId?: string;
+  selectedEntity?: Entity;
   temperature: number;
   studioSceneMethods?: StudioSceneExports;
 
   // Actions
   setStudioSceneMethods: (methods: StudioSceneExports) => void;
-  selectPalm: (id: string) => void;
-  selectRobot: (id: string) => void;
+  selectEntity: (entity: Entity | undefined) => void;
   assignRobotToPalm: (robotId: string, palmId: string) => void;
   updateRobotPosition: (robotId: string, position: Vector3) => void;
   completeRobotMission: (robotId: string) => void;

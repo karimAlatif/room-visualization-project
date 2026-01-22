@@ -321,6 +321,7 @@ function copyMetadata(source: BABYLON.Node, target: BABYLON.Node) {
 }
 
 
+
 // async const loadAndPlaceGrass(modelPaths: string[]) {
 //     try {
 //       // Load all grass models from the provided paths

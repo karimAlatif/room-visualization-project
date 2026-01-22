@@ -1,8 +1,8 @@
 import React from "react";
-import { Box, Typography, Paper, Chip, Button, Divider } from "@mui/material";
-import { Zap as BotIcon } from "lucide-react";
+import { Box, Typography, Paper, Divider } from "@mui/material";
+// import { Zap as BotIcon } from "lucide-react";
 import { useStyles } from "./RightSidebar.styles";
-import { useFarmStore } from "src/shared/store";
+// import { useFarmStore } from "src/shared/store";
 import { Robot } from "src/types";
 import { ProgressBar } from "./ProgressBar";
 
@@ -12,51 +12,22 @@ interface RobotDetailsProps {
 
 export const RobotDetails = ({ robot }: RobotDetailsProps) => {
   const classes = useStyles();
-  const { returnRobotToBase, addActivityLog } = useFarmStore();
+  // const { returnRobotToBase, addActivityLog } = useFarmStore();
 
-  const handleReturnToBase = (): void => {
-    returnRobotToBase(robot.id);
-    addActivityLog({
-      action: "Return Initiated",
-      details: `${robot.id} returning to base`,
-      entityType: "robot",
-      entityId: robot.id,
-    });
-  };
+  // const handleReturnToBase = (): void => {
+  //   returnRobotToBase(robot.id);
+  //   addActivityLog({
+  //     action: "Return Initiated",
+  //     details: `${robot.id} returning to base`,
+  //     entityType: "robot",
+  //     entityId: robot.id,
+  //   });
+  // };
 
-  const getStatusConfig = (
-    status: Robot["status"],
-  ): { label: string; color: "default" | "info" | "secondary" | "warning" } => {
-    const configs = {
-      idle: { label: "Idle", color: "default" as const },
-      moving: { label: "Moving", color: "info" as const },
-      scanning: { label: "Scanning", color: "secondary" as const },
-      returning: { label: "Returning", color: "warning" as const },
-    };
-    return configs[status] || configs.idle;
-  };
-
-  const statusConfig = getStatusConfig(robot.status);
+  // const statusConfig = getRobotStatusConfig(robot.status);
 
   return (
     <Box className={classes.detailsContainer}>
-      {/* Header */}
-      <Box className={classes.header}>
-        <Box>
-          <Typography variant="h6" className={classes.title}>
-            {robot.id}
-          </Typography>
-          <Typography variant="body2" className={classes.subtitle}>
-            Patrol Unit
-          </Typography>
-        </Box>
-        <Chip
-          label={statusConfig.label}
-          color={statusConfig.color}
-          size="small"
-        />
-      </Box>
-
       {/* Stats */}
       <Box className={classes.statsContainer}>
         <Paper className={classes.glassCard}>
@@ -92,7 +63,7 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
       </Box>
 
       {/* Actions */}
-      <Box className={classes.actionsContainer}>
+      {/* <Box className={classes.actionsContainer}>
         <Typography variant="caption" className={classes.actionsTitle}>
           Actions
         </Typography>
@@ -107,7 +78,7 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
             Return to Base
           </Button>
         </Box>
-      </Box>
+      </Box> */}
     </Box>
   );
 };

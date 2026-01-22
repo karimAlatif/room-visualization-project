@@ -48,6 +48,16 @@ export class StudioSceneManager {
   robotsRootNode?: BABYLON.TransformNode;
   terrainMesh?: BABYLON.GroundMesh;
 
+  // Selection properties (for both palms and robots)
+  private selectedEntityId?: string;
+  private selectedEntityType?: "palm" | "robot";
+  private selectionCircle?: BABYLON.Mesh;
+  private selectionAnimationGroup?: BABYLON.AnimationGroup;
+  private onEntitySelectedCallback?: (
+    entityId: string | null,
+    entityType: "palm" | "robot" | null,
+  ) => void;
+
   constructor(props: IStudioSceneManagerProps) {
     this.engine = props.engine;
     this.canvas = props.canvas;
@@ -73,6 +83,10 @@ export class StudioSceneManager {
       this.camera = this.createCamera(); //create Camera
       this.setUpEnvironMent(); //set up the environment      // Load the room with progress tracking
       await this.initFarmEnvironment();
+
+      // Setup click handlers for palm selection
+      this.setupSceneClickHandlers();
+
       if (this.onReady) {
         this?.onReady();
       }
@@ -103,7 +117,7 @@ export class StudioSceneManager {
 
     // Limit vertical rotation to keep farm in view
     camera.lowerBetaLimit = 0.2; // Can look up slightly
-    camera.upperBetaLimit = Math.PI / 2.2; // Can't go below ground
+    camera.upperBetaLimit = Math.PI / 2.05; // Can't go below ground
 
     // Allow full horizontal rotation (360 degrees)
     camera.lowerAlphaLimit = null;
@@ -444,9 +458,9 @@ export class StudioSceneManager {
     // 3. Load and place robots in zone 2
     await this.loadAndPlaceRobots();
 
-    // setTimeout(() => {
-    //   this.scene.debugLayer.show();
-    // }, 5000);
+    setTimeout(() => {
+      this.scene.debugLayer.show();
+    }, 5000);
 
     // 4. Add visual boundary indicator
     this.createFarmBoundary();
@@ -1587,7 +1601,412 @@ export class StudioSceneManager {
       }
     }
   }
+
+  /**
+   * Setup click handlers for entity selection (palms and robots)
+   */
+  private setupSceneClickHandlers(): void {
+    // Make all palm meshes pickable
+    this.palms.forEach((palm) => {
+      if (palm.palmNode) {
+        const meshes = palm.palmNode.getChildMeshes();
+        meshes.forEach((mesh) => {
+          mesh.isPickable = true;
+          mesh.metadata = {
+            ...mesh.metadata,
+            palmId: palm.id,
+            entityType: "palm",
+          };
+        });
+      }
+    });
+
+    // Make all robot meshes pickable
+    this.robots.forEach((robot) => {
+      if (robot.robotNode) {
+        const meshes = robot.robotNode.getChildMeshes();
+        meshes.forEach((mesh) => {
+          mesh.isPickable = true;
+          mesh.metadata = {
+            ...mesh.metadata,
+            robotId: robot.id,
+            entityType: "robot",
+          };
+        });
+      }
+    });
+
+    // Single unified pointer handler for both click and hover
+    this.scene.onPointerObservable.add((pointerInfo) => {
+      switch (pointerInfo.type) {
+        case BABYLON.PointerEventTypes.POINTERPICK: {
+          const pickResult = pointerInfo.pickInfo;
+          if (pickResult?.hit && pickResult.pickedMesh) {
+            const entity = this.findEntityFromMesh(pickResult.pickedMesh);
+            if (entity) {
+              this.selectEntity(entity.id, entity.type);
+            }
+          }
+          break;
+        }
+        case BABYLON.PointerEventTypes.POINTERMOVE: {
+          const pickResult = this.scene.pick(
+            this.scene.pointerX,
+            this.scene.pointerY,
+          );
+          if (pickResult?.hit && pickResult.pickedMesh) {
+            const entity = this.findEntityFromMesh(pickResult.pickedMesh);
+            this.canvas.style.cursor = entity ? "pointer" : "default";
+          } else {
+            this.canvas.style.cursor = "default";
+          }
+          break;
+        }
+      }
+    });
+  }
+
+  /**
+   * Find entity (palm or robot) from a picked mesh
+   */
+  private findEntityFromMesh(
+    mesh: BABYLON.AbstractMesh,
+  ): { id: string; type: "palm" | "robot" } | null {
+    // Check mesh metadata first
+    if (mesh.metadata?.palmId) {
+      return { id: mesh.metadata.palmId, type: "palm" };
+    }
+    if (mesh.metadata?.robotId) {
+      return { id: mesh.metadata.robotId, type: "robot" };
+    }
+    return null;
+  }
+
+  /**
+   * Set callback for when an entity is selected
+   */
+  onEntitySelected(
+    callback: (
+      entityId: string | null,
+      entityType: "palm" | "robot" | null,
+    ) => void,
+  ): void {
+    this.onEntitySelectedCallback = callback;
+  }
+
+  /**
+   * Legacy callback for palm selection (for backward compatibility)
+   */
+  onPalmSelected(callback: (palmId: string | null) => void): void {
+    this.onEntitySelectedCallback = (entityId, entityType) => {
+      if (entityType === "palm" || entityType === null) {
+        callback(entityId);
+      }
+    };
+  }
+
+  /**
+   * Select an entity (palm or robot) with animated circle
+   */
+  selectEntity(
+    entityId: string | null,
+    entityType: "palm" | "robot",
+  ): { success: boolean; entityId: string | null } {
+    // If same entity is selected, deselect it
+    if (
+      entityId === this.selectedEntityId &&
+      entityType === this.selectedEntityType
+    ) {
+      this.clearSelection();
+      if (this.onEntitySelectedCallback) {
+        this.onEntitySelectedCallback(null, null);
+      }
+      return { success: true, entityId: null };
+    }
+
+    // Clear previous selection
+    this.clearSelection();
+
+    if (!entityId) {
+      if (this.onEntitySelectedCallback) {
+        this.onEntitySelectedCallback(null, null);
+      }
+      return { success: true, entityId: null };
+    }
+
+    // Find entity position
+    let position: BABYLON.Vector3 | null = null;
+
+    if (entityType === "palm") {
+      const palm = this.palms.find((p) => p.id === entityId);
+      if (palm?.palmNode) {
+        position = palm.palmNode.position.clone();
+      }
+    } else if (entityType === "robot") {
+      const robot = this.robots.find((r) => r.id === entityId);
+      if (robot?.robotNode) {
+        position = robot.robotNode.position.clone();
+      }
+    }
+
+    if (!position) {
+      console.warn(`Entity ${entityId} not found`);
+      return { success: false, entityId: null };
+    }
+
+    this.selectedEntityId = entityId;
+    this.selectedEntityType = entityType;
+
+    // Create selection visualization with entity-specific color
+    const color =
+      entityType === "palm"
+        ? new BABYLON.Color3(0.07, 0.3, 0.15) // Green for palms
+        : new BABYLON.Color3(0.07, 0.16, 0.27); // Blue for robots
+
+    this.createSelectionCircle(position, color, entityType === "robot" ? 3 : 5);
+    this.animateCameraToTarget(position);
+
+    // Notify callback
+    if (this.onEntitySelectedCallback) {
+      this.onEntitySelectedCallback(entityId, entityType);
+    }
+
+    return { success: true, entityId };
+  }
+
+  /**
+   * Select a palm (wrapper for selectEntity for backward compatibility)
+   */
+  selectPalm(palmId: string | null): {
+    success: boolean;
+    palmId: string | null;
+  } {
+    if (!palmId) {
+      this.clearSelection();
+      return { success: true, palmId: null };
+    }
+    const result = this.selectEntity(palmId, "palm");
+    return { success: result.success, palmId: result.entityId };
+  }
+
+  /**
+   * Select a robot (wrapper for selectEntity)
+   */
+  selectRobot(robotId: string | null): {
+    success: boolean;
+    robotId: string | null;
+  } {
+    if (!robotId) {
+      this.clearSelection();
+      return { success: true, robotId: null };
+    }
+    const result = this.selectEntity(robotId, "robot");
+    return { success: result.success, robotId: result.entityId };
+  }
+
+  /**
+   * Get the currently selected palm ID
+   */
+  getSelectedPalmId(): string | undefined {
+    return this.selectedEntityType === "palm"
+      ? this.selectedEntityId
+      : undefined;
+  }
+
+  /**
+   * Get the currently selected robot ID
+   */
+  getSelectedRobotId(): string | undefined {
+    return this.selectedEntityType === "robot"
+      ? this.selectedEntityId
+      : undefined;
+  }
+
+  /**
+   * Clear the current selection
+   */
+  private clearSelection(): void {
+    // Stop and dispose animation group
+    if (this.selectionAnimationGroup) {
+      this.selectionAnimationGroup.stop();
+      this.selectionAnimationGroup.dispose();
+      this.selectionAnimationGroup = undefined;
+    }
+
+    // Dispose selection circle with fade out
+    if (this.selectionCircle) {
+      const circle = this.selectionCircle;
+      const fadeOut = new BABYLON.Animation(
+        "fadeOut",
+        "visibility",
+        60,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+      );
+      fadeOut.setKeys([
+        { frame: 0, value: 1 },
+        { frame: 12, value: 0 },
+      ]);
+      this.scene.beginDirectAnimation(
+        circle,
+        [fadeOut],
+        0,
+        12,
+        false,
+        1,
+        () => {
+          circle.material?.dispose();
+          circle.dispose();
+        },
+      );
+      this.selectionCircle = undefined;
+    }
+
+    this.selectedEntityId = undefined;
+    this.selectedEntityType = undefined;
+  }
+
+  /**
+   * Create a simple animated selection circle on the ground
+   */
+  private createSelectionCircle(
+    position: BABYLON.Vector3,
+    color: BABYLON.Color3,
+    radius: number = 5,
+  ): void {
+    // Create a horizontal disc on the ground
+    this.selectionCircle = BABYLON.MeshBuilder.CreateDisc(
+      "selectionCircle",
+      {
+        radius: radius,
+        tessellation: 64,
+      },
+      this.scene,
+    );
+
+    // Position flat on ground (horizontal)
+    this.selectionCircle.position = new BABYLON.Vector3(
+      position.x,
+      this.terrainMesh &&
+        this.terrainMesh.getHeightAtCoordinates(position.x, position.z) + 0.1,
+      position.z,
+    );
+    this.selectionCircle.rotation.x = Math.PI / 2; // Lay flat on ground
+
+    // Glowing material
+    const material = new BABYLON.StandardMaterial("selectionMat", this.scene);
+    material.emissiveColor = color;
+    material.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    material.alpha = 0.6;
+    material.disableLighting = true;
+    material.backFaceCulling = false;
+    this.selectionCircle.material = material;
+
+    // Animation group
+    this.selectionAnimationGroup = new BABYLON.AnimationGroup(
+      "selectionAnim",
+      this.scene,
+    );
+
+    // Radius pulse animation (scaling X and Z for horizontal disc)
+    const radiusPulse = new BABYLON.Animation(
+      "radiusPulse",
+      "scaling",
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+    );
+    const ease = new BABYLON.SineEase();
+    ease.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+    radiusPulse.setEasingFunction(ease);
+    radiusPulse.setKeys([
+      { frame: 0, value: new BABYLON.Vector3(1, 1, 1) },
+      { frame: 40, value: new BABYLON.Vector3(1.25, 1.25, 1) },
+      { frame: 80, value: new BABYLON.Vector3(1, 1, 1) },
+    ]);
+    this.selectionAnimationGroup.addTargetedAnimation(
+      radiusPulse,
+      this.selectionCircle,
+    );
+
+    // Alpha pulse for breathing effect
+    const alphaPulse = new BABYLON.Animation(
+      "alphaPulse",
+      "material.alpha",
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
+    );
+    alphaPulse.setEasingFunction(ease);
+    alphaPulse.setKeys([
+      { frame: 0, value: 0.5 },
+      { frame: 40, value: 0.3 },
+      { frame: 80, value: 0.5 },
+    ]);
+    this.selectionAnimationGroup.addTargetedAnimation(
+      alphaPulse,
+      this.selectionCircle,
+    );
+
+    // Entrance animation - scale from 0
+    this.selectionCircle.scaling = new BABYLON.Vector3(0.01, 0.01, 1);
+    const entranceAnim = new BABYLON.Animation(
+      "entrance",
+      "scaling",
+      60,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+    );
+    const bounceEase = new BABYLON.BackEase(0.3);
+    bounceEase.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+    entranceAnim.setEasingFunction(bounceEase);
+    entranceAnim.setKeys([
+      { frame: 0, value: new BABYLON.Vector3(0.01, 0.01, 1) },
+      { frame: 18, value: new BABYLON.Vector3(1, 1, 1) },
+    ]);
+
+    // Run entrance then start loop
+    this.scene.beginDirectAnimation(
+      this.selectionCircle,
+      [entranceAnim],
+      0,
+      18,
+      false,
+      1,
+      () => {
+        this.selectionAnimationGroup?.start(true);
+      },
+    );
+  }
+
+  /**
+   * Smoothly animate camera to look at the selected entity
+   */
+  private animateCameraToTarget(targetPosition: BABYLON.Vector3): void {
+    if (!this.camera) return;
+
+    const targetAnim = new BABYLON.Animation(
+      "cameraTarget",
+      "target",
+      60,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+    );
+    const easeFunction = new BABYLON.CubicEase();
+    easeFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+    targetAnim.setEasingFunction(easeFunction);
+    targetAnim.setKeys([
+      { frame: 0, value: this.camera.target.clone() },
+      {
+        frame: 45,
+        value: new BABYLON.Vector3(targetPosition.x, 2, targetPosition.z),
+      },
+    ]);
+
+    this.scene.beginDirectAnimation(this.camera, [targetAnim], 0, 45, false);
+  }
 }
+
 // Exporting a factory function for creating the BabylonManager instance
 export const createStudioSceneManager = (
   props: IStudioSceneManagerProps,
@@ -1602,6 +2021,32 @@ export const exportedStudioSceneMethods = (
     moveRobotToPalm: async (robotId: string, palmId: string) => {
       return sceneManager.moveRobotToPalm(robotId, palmId);
     },
+    selectPalm: (palmId: string | null) => {
+      return sceneManager.selectPalm(palmId);
+    },
+    selectRobot: (robotId: string | null) => {
+      return sceneManager.selectRobot(robotId);
+    },
+    selectEntity: (entityId: string | null, entityType: "palm" | "robot") => {
+      return sceneManager.selectEntity(entityId, entityType);
+    },
+    getSelectedPalmId: () => {
+      return sceneManager.getSelectedPalmId();
+    },
+    getSelectedRobotId: () => {
+      return sceneManager.getSelectedRobotId();
+    },
+    onPalmSelected: (callback: (palmId: string | null) => void) => {
+      sceneManager.onPalmSelected(callback);
+    },
+    onEntitySelected: (
+      callback: (
+        entityId: string | null,
+        entityType: "palm" | "robot" | null,
+      ) => void,
+    ) => {
+      sceneManager.onEntitySelected(callback);
+    },
   };
 };
 
@@ -1610,4 +2055,25 @@ export type StudioSceneExports = {
     robotId: string,
     palmId: string,
   ) => Promise<{ robotId: string }>;
+  selectPalm: (palmId: string | null) => {
+    success: boolean;
+    palmId: string | null;
+  };
+  selectRobot: (robotId: string | null) => {
+    success: boolean;
+    robotId: string | null;
+  };
+  selectEntity: (
+    entityId: string | null,
+    entityType: "palm" | "robot",
+  ) => { success: boolean; entityId: string | null };
+  getSelectedPalmId: () => string | undefined;
+  getSelectedRobotId: () => string | undefined;
+  onPalmSelected: (callback: (palmId: string | null) => void) => void;
+  onEntitySelected: (
+    callback: (
+      entityId: string | null,
+      entityType: "palm" | "robot" | null,
+    ) => void,
+  ) => void;
 };

@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { Vector3 } from 'babylonjs';
-import { ActivityLog, FarmState, generateAlerts, generateRobots, PalmStatus, RobotStatus, generateGridTreeDistribution } from 'src/types';
+import { ActivityLog, FarmState, generateAlerts, generateRobots, PalmStatus, RobotStatus, generateGridTreeDistribution, Entity } from 'src/types';
 import { StudioSceneExports } from 'src/Babylon/StudioScene/studioSceneManager';
 
 export const useFarmStore = create<FarmState>((set, get) => ({
@@ -12,8 +12,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   temperature: 28,
   
   setStudioSceneMethods: (methods: StudioSceneExports) => set({ studioSceneMethods: methods }),
-  selectPalm: (id: string) => set({ selectedPalmId: id }),
-  selectRobot: (id: string) => set({ selectedRobotId: id }),
+  selectEntity: (entity: Entity | undefined) => set({ selectedEntity: entity }),
 
   assignRobotToPalm: (robotId: string, palmId: string) => {
     const palm = get().palms.find(p => p.id === palmId);

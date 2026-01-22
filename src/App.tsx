@@ -59,9 +59,6 @@ function AppContent() {
     };
   }, []); // Empty dependency array - only run once on mount
 
-  // useEffect(() => {
-  //   exportedStudioSceneMethods().moveRobotToPalm("robot-1", "palm-1");
-  // }, []);
   setTimeout(() => {}, 2000);
   console.log("theme", theme);
   return (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, IconButton } from "@mui/material";
 import { useStyles } from "./RightSidebar.styles";
 import { useFarmStore } from "src/shared/store";
@@ -7,15 +7,32 @@ import { RobotDetails } from "./RobotDetails";
 import { EmptyState } from "./EmptyState";
 import { PanelHeader } from "./PanelHeader";
 import { X as CloseIcon } from "lucide-react";
+import { Palm, Robot } from "src/types";
 
 export const RightPanel = () => {
-  const { selectedRobotId, palms, robots } = useFarmStore();
+  const { selectedEntity, studioSceneMethods, palms, robots, selectEntity } =
+    useFarmStore();
   const classes = useStyles();
 
-  const selectedPalm = palms[80];
-  const selectedRobot = robots.find((r) => r.id === selectedRobotId);
-
-  const hasSelection = selectedPalm || selectedRobot;
+  useEffect(() => {
+    if (studioSceneMethods) {
+      studioSceneMethods.onEntitySelected((entity, entityType) => {
+        console.log("Entity selected:", entity);
+        if (!!entity && !!entityType) {
+          selectEntity({
+            id: entity,
+            type: entityType,
+            entity:
+              entityType === "palm"
+                ? palms.find((p) => p.id === entity)
+                : (robots.find((r) => r.id === entity) as Palm | Robot),
+          });
+        } else {
+          selectEntity(undefined);
+        }
+      });
+    }
+  }, [studioSceneMethods]);
 
   const handleClose = () => {
     // TODO: Implement close handler if needed
@@ -23,7 +40,7 @@ export const RightPanel = () => {
     // selectRobot(null);
   };
 
-  if (!hasSelection) {
+  if (!selectedEntity) {
     return <EmptyState />;
   }
 
@@ -31,7 +48,7 @@ export const RightPanel = () => {
     <Box className={classes.panelWithSelection}>
       {/* Header with close button */}
       <Box className={classes.panelHeader}>
-        {selectedPalm && <PanelHeader palm={selectedPalm} />}
+        <PanelHeader selectedEntity={selectedEntity} />
         <IconButton size="small" onClick={handleClose}>
           <CloseIcon size={20} color="white" strokeWidth={2.5} />
         </IconButton>
@@ -39,8 +56,12 @@ export const RightPanel = () => {
 
       {/* Content */}
       <Box className={classes.panelContent}>
-        {selectedPalm && <PalmDetails palm={selectedPalm} />}
-        {selectedRobot && <RobotDetails robot={selectedRobot} />}
+        {selectedEntity?.type === "palm" && (
+          <PalmDetails palm={selectedEntity.entity as Palm} />
+        )}
+        {selectedEntity?.type === "robot" && (
+          <RobotDetails robot={selectedEntity.entity as Robot} />
+        )}
       </Box>
     </Box>
   );

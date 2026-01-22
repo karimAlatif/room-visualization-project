@@ -11,9 +11,10 @@ export const useStyles = makeStyles((theme: Theme) => ({
     maxHeight: "calc(100vh - 32px)",
     height: "auto",
     zIndex: 40,
-    backgroundColor: alpha(theme.palette.common.white, 0.08),
+    background: 'linear-gradient(180deg, rgb(137 145 166 / 70%) 0%, rgb(74 90 106) 50%, rgba(66, 89, 129, 0.9) 100%)',
     backdropFilter: "blur(54px) saturate(200%) brightness(130%)",
     WebkitBackdropFilter: "blur(54px) saturate(200%) brightness(130%)",
+
     border: `1.5px solid ${alpha(theme.palette.common.white, 0.3)}`,
     borderRadius: 28,
     padding: theme.spacing(3),
@@ -133,7 +134,7 @@ export const useStyles = makeStyles((theme: Theme) => ({
   emptyIconSvg: {
     width: 32,
     height: 32,
-    color: theme.palette.text.disabled,
+    color: theme.palette.text.primary,
   },
 
   emptyTitle: {
@@ -586,8 +587,13 @@ export const useStyles = makeStyles((theme: Theme) => ({
   activityList: {
     display: "flex",
     flexDirection: "column",
+    margin: `${theme.spacing(2)} 0`,
+    padding: `${theme.spacing(1.5)} ${theme.spacing(1)}`,
+    backgroundColor: alpha(theme.palette.common.white, 0.03),
+    minHeight: 150,
     gap: theme.spacing(1),
     maxHeight: 200,
+    borderRadius: 16,
     overflowY: "auto",
     "&::-webkit-scrollbar": {
       width: 6,
