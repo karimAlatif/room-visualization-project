@@ -1,11 +1,5 @@
 import * as BABYLON from "babylonjs";
 
-export const PalmModelPaths = [
-  "models/palms/Palm_1178_High_Low_Thin_2.glb",
-  "models/palms/PalmDate_378.glb"
-  // Add more model paths here as needed
-];
-
 export const createMountainRangeHeightMap = (): string => {
   const resolution = 512;
   const canvas = document.createElement("canvas");
@@ -24,6 +18,7 @@ export const createMountainRangeHeightMap = (): string => {
   const ZONE2_RADIUS = 0.45; // Trees and grass area (placeholders)
   const ZONE3_START = 0.5; // Mountains begin with transition
 
+  
   for (let y = 0; y < resolution; y++) {
     for (let x = 0; x < resolution; x++) {
       const idx = (y * resolution + x) * 4;
@@ -239,7 +234,7 @@ export function cloneTransformHierarchy(
     sourceRoot.name + nameSuffix,
     scene,
   );
-
+  
   copyTransform(sourceRoot, rootClone);
   copyMetadata(sourceRoot, rootClone);
 

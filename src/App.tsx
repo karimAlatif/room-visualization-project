@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useTheme, Box } from "@mui/material";
 import * as BABYLON from "babylonjs";
 import babylonManager from "./Babylon/babylonManager.js";
+import { exportedStudioSceneMethods } from "./Babylon/StudioScene/studioSceneManager.js";
 import DesertAmbientAudio from "./shared/components/DesertAmbientAudio.js";
 import LoadingScreen from "./shared/components/LoadingScreen";
 import GlobalToast from "shared/components/Toaster";
@@ -16,18 +17,19 @@ import { useAppStyles } from "./App.styles";
 import { RightPanel } from "./layout/RightSideBar/index.js";
 
 const gmRef = createRef<HTMLCanvasElement>();
+
 export interface GameManager {
   engine: BABYLON.Engine;
   studioSceneManager: any;
 }
+
 const queryClient = new QueryClient();
 
 function AppContent() {
   const theme = useTheme();
   const classes = useAppStyles();
-  const [, setGameManager] = useState<GameManager>();
   const [isSceneLoading, setIsSceneLoading] = useState(true);
-  const { palms, robots } = useFarmStore();
+  const { palms, robots, setStudioSceneMethods } = useFarmStore();
 
   useEffect(() => {
     if (!gmRef.current) return;
@@ -44,7 +46,11 @@ function AppContent() {
         }, 1500);
       },
     ); //Create Babylonjs Ref
-    setGameManager(GManger);
+
+    // Store the exported studio scene methods in the global state
+    setStudioSceneMethods(
+      exportedStudioSceneMethods(GManger.studioSceneManager),
+    );
 
     return () => {
       if (GManger) {
@@ -53,9 +59,10 @@ function AppContent() {
     };
   }, []); // Empty dependency array - only run once on mount
 
-  if (!theme) {
-    return null;
-  }
+  // useEffect(() => {
+  //   exportedStudioSceneMethods().moveRobotToPalm("robot-1", "palm-1");
+  // }, []);
+  setTimeout(() => {}, 2000);
   console.log("theme", theme);
   return (
     <Box className={classes.appContainer}>
@@ -66,22 +73,23 @@ function AppContent() {
       </Box>
 
       {/* Main Content Area */}
-      <Box className={classes.mainContent}>
-        {/* Main 3D Canvas */}
-        <canvas className={classes.canvas} id="canvas-container" ref={gmRef} />
-
-        {/* Ambient Audio Component */}
-        <Box className={classes.ambientAudioContainer}>
-          <DesertAmbientAudio />
+      {/* <Box className={classes.mainContent}> */}
+      {isSceneLoading && (
+        <Box className={classes.loadingOverlay}>
+          <LoadingScreen open={isSceneLoading} />
         </Box>
+      )}
+      {/* Main 3D Canvas */}
+      <canvas className={classes.canvas} id="canvas-container" ref={gmRef} />
 
-        {/* Loading Screen Overlay */}
-        {isSceneLoading && (
-          <Box className={classes.loadingOverlay}>
-            <LoadingScreen open={isSceneLoading} />
-          </Box>
-        )}
+      {/* Ambient Audio Component */}
+      <Box className={classes.ambientAudioContainer}>
+        <DesertAmbientAudio />
       </Box>
+
+      {/* Loading Screen Overlay */}
+
+      {/* </Box> */}
 
       <Box>
         <RightPanel />

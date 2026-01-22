@@ -1,7 +1,8 @@
 
 import { create } from 'zustand';
 import { Vector3 } from 'babylonjs';
-import { ActivityLog, FarmState, generateAlerts, generateSmartTreeDistribution, generateRobots, PalmStatus, RobotStatus, generateGridTreeDistribution } from 'src/types';
+import { ActivityLog, FarmState, generateAlerts, generateRobots, PalmStatus, RobotStatus, generateGridTreeDistribution } from 'src/types';
+import { StudioSceneExports } from 'src/Babylon/StudioScene/studioSceneManager';
 
 export const useFarmStore = create<FarmState>((set, get) => ({
   palms: generateGridTreeDistribution(),
@@ -9,7 +10,8 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   alerts: generateAlerts(),
   activityLogs: [],
   temperature: 28,
-
+  
+  setStudioSceneMethods: (methods: StudioSceneExports) => set({ studioSceneMethods: methods }),
   selectPalm: (id: string) => set({ selectedPalmId: id }),
   selectRobot: (id: string) => set({ selectedRobotId: id }),
 

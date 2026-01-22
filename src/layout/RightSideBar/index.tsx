@@ -12,7 +12,7 @@ export const RightPanel = () => {
   const { selectedRobotId, palms, robots } = useFarmStore();
   const classes = useStyles();
 
-  const selectedPalm = palms[0];
+  const selectedPalm = palms[80];
   const selectedRobot = robots.find((r) => r.id === selectedRobotId);
 
   const hasSelection = selectedPalm || selectedRobot;

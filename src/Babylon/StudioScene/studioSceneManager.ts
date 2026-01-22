@@ -2,12 +2,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
-import { FarmSize, Palm } from "../../types";
 import {
-  cloneTransformHierarchy,
-  createMountainRangeHeightMap,
+  FarmSize,
+  Palm,
+  Robot,
+  RobotModelPath,
+  ZONE2_INNER_RADIUS,
+  ZONE2_OUTER_RADIUS,
   PalmModelPaths,
-} from "./uitls";
+} from "../../types";
+import { cloneTransformHierarchy, createMountainRangeHeightMap } from "./uitls";
 import { DefaultData } from "../types";
 
 export interface IStudioSceneManagerProps {
@@ -36,12 +40,20 @@ export class StudioSceneManager {
     twistY: BABYLON.Animation;
   };
   palmWindGroup?: BABYLON.AnimationGroup;
+  robots: (Robot & {
+    robotNode?: BABYLON.TransformNode;
+    animationGroups?: BABYLON.AnimationGroup[];
+    isMoving?: boolean;
+  })[];
+  robotsRootNode?: BABYLON.TransformNode;
+  terrainMesh?: BABYLON.GroundMesh;
 
   constructor(props: IStudioSceneManagerProps) {
     this.engine = props.engine;
     this.canvas = props.canvas;
     this.scene = new BABYLON.Scene(this.engine);
     this.palms = props.defaultData.palms;
+    this.robots = props.defaultData.robots;
     this.onReady = props.onReady;
   }
 
@@ -86,8 +98,8 @@ export class StudioSceneManager {
     camera.attachControl(this.canvas, true);
 
     // Limit camera movement to focus on central farm area
-    camera.lowerRadiusLimit = 20;
-    camera.upperRadiusLimit = 300;
+    camera.lowerRadiusLimit = 10;
+    camera.upperRadiusLimit = 500;
 
     // Limit vertical rotation to keep farm in view
     camera.lowerBetaLimit = 0.2; // Can look up slightly
@@ -429,7 +441,14 @@ export class StudioSceneManager {
     // 2. Load and place palm trees in the central farm
     await this.loadAndPlacePalmTrees();
 
-    // 3. Add visual boundary indicator
+    // 3. Load and place robots in zone 2
+    await this.loadAndPlaceRobots();
+
+    // setTimeout(() => {
+    //   this.scene.debugLayer.show();
+    // }, 5000);
+
+    // 4. Add visual boundary indicator
     this.createFarmBoundary();
 
     // Add atmospheric effects
@@ -456,6 +475,8 @@ export class StudioSceneManager {
           mesh.position.y = 0;
           // Use PBR material for more realistic rendering
           mesh.material = this.createPBRTerrainMaterial(textureScale);
+          // Store reference to terrain mesh
+          this.terrainMesh = mesh as BABYLON.GroundMesh;
         },
       },
       this.scene,
@@ -834,6 +855,686 @@ export class StudioSceneManager {
     // group.addTargetedAnimation(twistY.clone(), treeParent);
   }
 
+  /**
+   * Load and place 5 robots in zone 2 with cloned animations
+   */
+  async loadAndPlaceRobots(): Promise<void> {
+    try {
+      // Create root node for all robots
+      this.robotsRootNode = new BABYLON.TransformNode("robotsRoot", this.scene);
+
+      // Load the robot model
+      const robotResult = await BABYLON.SceneLoader.ImportMeshAsync(
+        "",
+        "./",
+        RobotModelPath,
+        this.scene,
+      );
+
+      // Get the root mesh and animation groups
+      const sourceRootMesh = robotResult.meshes[0];
+      const sourceAnimationGroups = robotResult.animationGroups;
+
+      // Hide source meshes
+      robotResult.meshes.forEach((mesh) => mesh.setEnabled(false));
+
+      // Stop all source animations
+      sourceAnimationGroups.forEach((ag) => ag.stop());
+
+      console.log(
+        `Loaded robot model with ${sourceAnimationGroups.length} animation groups`,
+      );
+      console.log(
+        "Available animations:",
+        sourceAnimationGroups.map((ag) => ag.name),
+      );
+
+      // Clone and place 5 robots in zone 2
+      // const robotCount = 5;
+      for (let i = 0; i < this.robots.length; i++) {
+        // Generate random position in zone 2 (ring between inner and outer radius)
+        const position = this.getRandomPositionInZone2();
+
+        // Clone the robot with its hierarchy
+        const robotNode = cloneTransformHierarchy(
+          sourceRootMesh as BABYLON.Mesh,
+          this.scene,
+          { nameSuffix: `robot_${i}` },
+        );
+
+        // Create an inner pivot node to fix model orientation
+        // This allows us to rotate the model itself without affecting movement direction
+        const modelPivot = new BABYLON.TransformNode(
+          `robotPivot_${i}`,
+          this.scene,
+        );
+
+        // Re-parent all children of robotNode to the pivot
+        const children = robotNode.getChildren().slice(); // Clone array to avoid mutation issues
+        children.forEach((child) => {
+          child.parent = modelPivot;
+        });
+
+        // Parent pivot to robotNode
+        modelPivot.parent = robotNode;
+
+        // Rotate the pivot to align model's forward direction with +Z axis
+        // Adjust this value based on how the model is oriented:
+        // - Math.PI (180°) if model faces -Z
+        // - Math.PI / 2 (90°) if model faces +X
+        // - -Math.PI / 2 (-90°) if model faces -X
+        // - 0 if model already faces +Z
+        modelPivot.rotation.y = Math.PI * 1.5; // 180 degree rotation
+
+        // Clone animation groups for this robot instance
+        const clonedAnimationGroups = this.cloneAnimationGroupsForRobot(
+          sourceAnimationGroups,
+          robotNode,
+          i,
+        );
+
+        // Get terrain height at robot position
+        const terrainHeight = this.getTerrainHeightAt(position.x, position.z);
+        position.y = terrainHeight;
+
+        // Set position and random initial rotation
+        robotNode.position = position;
+        robotNode.rotation.y = Math.random() * Math.PI * 2;
+
+        // Set scale (adjust as needed for your robot model)
+        const scale = 5.0;
+        robotNode.scaling.set(scale, scale, scale);
+
+        // Enable shadows for robot meshes
+        robotNode.getChildMeshes().forEach((mesh) => {
+          if (mesh instanceof BABYLON.Mesh) {
+            this.shadowGenerator?.addShadowCaster(mesh);
+            mesh.receiveShadows = true;
+          }
+        });
+
+        // Parent to root node
+        robotNode.parent = this.robotsRootNode;
+
+        // Update robot data
+        if (this.robots[i]) {
+          this.robots[i].robotNode = robotNode;
+          this.robots[i].animationGroups = clonedAnimationGroups;
+          this.robots[i].position = new BABYLON.Vector3(
+            position.x,
+            position.y,
+            position.z,
+          );
+          this.robots[i].isMoving = false;
+        }
+
+        console.log(
+          `Placed robot ${i} at position (${position.x.toFixed(2)}, ${position.z.toFixed(2)})`,
+        );
+      }
+
+      console.log(
+        `Successfully loaded and placed ${this.robots.length} robots in zone 2`,
+      );
+    } catch (error) {
+      console.error("Error loading robots:", error);
+    }
+  }
+
+  /**
+   * Get a random position within zone 2 (ring around the farm)
+   */
+  private getRandomPositionInZone2(): BABYLON.Vector3 {
+    // Generate random angle
+    const angle = Math.random() * Math.PI * 2;
+
+    // Generate random radius within zone 2
+    const radius =
+      ZONE2_INNER_RADIUS +
+      Math.random() * (ZONE2_OUTER_RADIUS - ZONE2_INNER_RADIUS);
+
+    // Convert polar to cartesian coordinates
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    return new BABYLON.Vector3(x, 0, z);
+  }
+
+  /**
+   * Clone animation groups for a specific robot instance
+   */
+  private cloneAnimationGroupsForRobot(
+    sourceAnimationGroups: BABYLON.AnimationGroup[],
+    robotNode: BABYLON.TransformNode,
+    robotIndex: number,
+  ): BABYLON.AnimationGroup[] {
+    const clonedGroups: BABYLON.AnimationGroup[] = [];
+
+    // Get all child transform nodes and meshes from the cloned robot
+    const clonedNodes = new Map<string, BABYLON.Node>();
+    robotNode.getDescendants(false).forEach((node) => {
+      // Extract the original name without the suffix
+      const originalName = node.name.replace(/_robot_\d+$/g, "");
+      clonedNodes.set(originalName, node);
+    });
+    // Also map the root node
+    const rootOriginalName = robotNode.name.replace(/_robot_\d+$/g, "");
+    clonedNodes.set(rootOriginalName, robotNode);
+
+    sourceAnimationGroups.forEach((sourceGroup) => {
+      const clonedGroup = new BABYLON.AnimationGroup(
+        `${sourceGroup.name}_robot_${robotIndex}`,
+        this.scene,
+      );
+
+      let matchedTargets = 0;
+
+      // Clone each targeted animation and retarget to cloned nodes
+      sourceGroup.targetedAnimations.forEach((targetedAnim) => {
+        const originalTarget = targetedAnim.target;
+        const originalName = originalTarget.name;
+
+        // Try to find the corresponding cloned node
+        let clonedTarget = clonedNodes.get(originalName);
+
+        // If not found, try partial matching using forEach
+        if (!clonedTarget) {
+          clonedNodes.forEach((node, key) => {
+            if (
+              !clonedTarget &&
+              (key.includes(originalName) || originalName.includes(key))
+            ) {
+              clonedTarget = node;
+            }
+          });
+        }
+
+        if (clonedTarget) {
+          // Clone the animation
+          const clonedAnimation = targetedAnim.animation.clone();
+          clonedGroup.addTargetedAnimation(clonedAnimation, clonedTarget);
+          matchedTargets++;
+        }
+      });
+
+      if (matchedTargets > 0) {
+        clonedGroups.push(clonedGroup);
+        console.log(
+          `Cloned animation group "${sourceGroup.name}" for robot ${robotIndex} with ${matchedTargets} targets`,
+        );
+      }
+    });
+
+    return clonedGroups;
+  }
+
+  /**
+   * Move a robot to a palm tree with smooth, realistic pathfinding movement
+   * Uses the "1LYN" animation during movement
+   * @param robotId - The ID of the robot to move
+   * @param palmId - The ID of the target palm tree
+   */
+  async moveRobotToPalm(
+    robotId: string,
+    palmId: string,
+  ): Promise<{ robotId: string }> {
+    // Find the robot and palm
+    const robot = this.robots.find((r) => r.id === robotId);
+    const palm = this.palms.find((p) => p.id === palmId);
+    const speed = 10; // units per second
+
+    console.log(`Command received: Move Robot  `, robot);
+    if (!robot || !palm) {
+      console.error(`Robot ${robotId} or Palm ${palmId} not found`);
+      return { robotId };
+    }
+
+    if (!robot.robotNode) {
+      console.error(`Robot ${robotId} has no node`);
+      return { robotId };
+    }
+
+    if (robot.isMoving) {
+      console.warn(`Robot ${robotId} is already moving`);
+      return { robotId };
+    }
+
+    // Mark robot as moving
+    robot.isMoving = true;
+
+    // Get positions
+    const startPos = robot.robotNode.position.clone();
+    const targetPos = palm.palmNode
+      ? palm.palmNode.position.clone()
+      : new BABYLON.Vector3(palm.position.x, 0, palm.position.z);
+
+    // Offset target to stop near the palm, not inside it
+    const approachDistance = 4.0; // Stop 4 units away from palm center
+    const directionToTarget = targetPos.subtract(startPos).normalize();
+    const finalTarget = targetPos.subtract(
+      directionToTarget.scale(approachDistance),
+    );
+
+    // Find the "1LYN" animation (walking/movement animation)
+    const walkAnimation = robot.animationGroups?.find((ag) =>
+      ag.name.includes("1LYN"),
+    );
+
+    if (walkAnimation) {
+      walkAnimation.start(true); // Loop the walk animation
+    }
+
+    // Calculate path avoiding palm trees
+    const path = this.calculatePathAvoidingPalms(startPos, finalTarget);
+    // Animate along the path with specified speed
+    await this.animateRobotAlongPath(robot, path, speed);
+
+    // Stop walking animation and mark as completed
+    if (walkAnimation) {
+      walkAnimation.stop();
+    }
+
+    robot.isMoving = false;
+    robot.position = new BABYLON.Vector3(
+      robot.robotNode.position.x,
+      robot.robotNode.position.y,
+      robot.robotNode.position.z,
+    );
+
+    console.log(`Robot ${robotId} reached palm ${palmId}`);
+    return { robotId };
+  }
+
+  /**
+   * Calculate a path from start to end that avoids palm trees
+   * Uses a simple waypoint-based pathfinding approach
+   */
+  private calculatePathAvoidingPalms(
+    start: BABYLON.Vector3,
+    end: BABYLON.Vector3,
+  ): BABYLON.Vector3[] {
+    const path: BABYLON.Vector3[] = [start.clone()];
+    const obstacleRadius = 4.0; // Minimum distance to keep from palm trees
+    const stepSize = 2.0; // How far to move in each step
+
+    let currentPos = start.clone();
+    const maxIterations = 500; // Prevent infinite loops
+    let iterations = 0;
+
+    while (
+      BABYLON.Vector3.Distance(currentPos, end) > stepSize &&
+      iterations < maxIterations
+    ) {
+      iterations++;
+
+      // Direction to target
+      const dirToTarget = end.subtract(currentPos).normalize();
+
+      // Check if direct path is blocked by any palm
+      let blocked = false;
+      let closestObstacle: BABYLON.Vector3 | null = null;
+      let minObstacleDistance = Infinity;
+
+      for (const palm of this.palms) {
+        if (!palm.palmNode) continue;
+
+        const palmPos = palm.palmNode.position;
+        const toPalm = palmPos.subtract(currentPos);
+        const distToPalm = toPalm.length();
+
+        // Check if palm is in our way (within a cone towards target)
+        const dotProduct = BABYLON.Vector3.Dot(toPalm.normalize(), dirToTarget);
+
+        if (dotProduct > 0.3 && distToPalm < obstacleRadius * 3) {
+          // Palm is roughly in front of us and close
+          const perpDist = Math.sqrt(
+            distToPalm * distToPalm -
+              Math.pow(BABYLON.Vector3.Dot(toPalm, dirToTarget), 2),
+          );
+
+          if (perpDist < obstacleRadius && distToPalm < minObstacleDistance) {
+            blocked = true;
+            closestObstacle = palmPos.clone();
+            minObstacleDistance = distToPalm;
+          }
+        }
+      }
+
+      let nextPos: BABYLON.Vector3;
+
+      if (blocked && closestObstacle) {
+        // Calculate avoidance direction (perpendicular to obstacle)
+        const toObstacle = closestObstacle.subtract(currentPos);
+        toObstacle.y = 0;
+
+        // Choose left or right based on which is closer to target
+        const perpLeft = new BABYLON.Vector3(-toObstacle.z, 0, toObstacle.x)
+          .normalize()
+          .scale(obstacleRadius * 1.2);
+        const perpRight = new BABYLON.Vector3(toObstacle.z, 0, -toObstacle.x)
+          .normalize()
+          .scale(obstacleRadius * 1.2);
+
+        const leftPoint = closestObstacle.add(perpLeft);
+        const rightPoint = closestObstacle.add(perpRight);
+
+        // Choose the point closer to the final destination
+        const leftDist = BABYLON.Vector3.Distance(leftPoint, end);
+        const rightDist = BABYLON.Vector3.Distance(rightPoint, end);
+
+        const avoidPoint = leftDist < rightDist ? leftPoint : rightPoint;
+        const avoidDir = avoidPoint.subtract(currentPos).normalize();
+
+        nextPos = currentPos.add(avoidDir.scale(stepSize));
+      } else {
+        // No obstacle, move directly towards target
+        nextPos = currentPos.add(dirToTarget.scale(stepSize));
+      }
+
+      nextPos.y = 0; // Keep on ground
+      currentPos = nextPos.clone();
+      path.push(currentPos.clone());
+    }
+
+    // Add final position
+    path.push(end.clone());
+
+    // Smooth the path using Catmull-Rom spline interpolation
+    return this.smoothPath(path);
+  }
+
+  /**
+   * Smooth a path using Catmull-Rom spline interpolation for natural movement
+   */
+  private smoothPath(path: BABYLON.Vector3[]): BABYLON.Vector3[] {
+    if (path.length < 3) return path;
+
+    const smoothedPath: BABYLON.Vector3[] = [];
+    const segmentsPerPoint = 8; // More interpolation points for smoother curves
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const p0 = path[Math.max(0, i - 1)];
+      const p1 = path[i];
+      const p2 = path[Math.min(path.length - 1, i + 1)];
+      const p3 = path[Math.min(path.length - 1, i + 2)];
+
+      for (let t = 0; t < segmentsPerPoint; t++) {
+        const u = t / segmentsPerPoint;
+        const point = this.catmullRomInterpolate(p0, p1, p2, p3, u);
+        smoothedPath.push(point);
+      }
+    }
+
+    // Add final point
+    smoothedPath.push(path[path.length - 1].clone());
+
+    return smoothedPath;
+  }
+
+  /**
+   * Catmull-Rom spline interpolation
+   */
+  private catmullRomInterpolate(
+    p0: BABYLON.Vector3,
+    p1: BABYLON.Vector3,
+    p2: BABYLON.Vector3,
+    p3: BABYLON.Vector3,
+    t: number,
+  ): BABYLON.Vector3 {
+    const t2 = t * t;
+    const t3 = t2 * t;
+
+    const x =
+      0.5 *
+      (2 * p1.x +
+        (-p0.x + p2.x) * t +
+        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+
+    const z =
+      0.5 *
+      (2 * p1.z +
+        (-p0.z + p2.z) * t +
+        (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 +
+        (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3);
+
+    return new BABYLON.Vector3(x, 0, z);
+  }
+
+  /**
+   * Normalize angle to range [-PI, PI]
+   */
+  private normalizeAngle(angle: number): number {
+    while (angle > Math.PI) angle -= Math.PI * 2;
+    while (angle < -Math.PI) angle += Math.PI * 2;
+    return angle;
+  }
+
+  /**
+   * Smoothly interpolate between two angles
+   */
+  private lerpAngle(from: number, to: number, t: number): number {
+    const diff = this.normalizeAngle(to - from);
+    return from + diff * t;
+  }
+
+  /**
+   * Animate robot along a path with smooth movement and rotation
+   * Completely rewritten for ultra-smooth movement
+   * @param robot - The robot to animate
+   * @param path - Array of waypoints to follow
+   * @param speed - Movement speed in units per second
+   */
+  private async animateRobotAlongPath(
+    robot: Robot & {
+      robotNode?: BABYLON.TransformNode;
+      animationGroups?: BABYLON.AnimationGroup[];
+      isMoving?: boolean;
+    },
+    path: BABYLON.Vector3[],
+    speed: number = 25,
+  ): Promise<void> {
+    if (!robot.robotNode || path.length < 2) return;
+
+    const robotNode = robot.robotNode;
+
+    // Calculate total path length
+    let totalLength = 0;
+    const segmentLengths: number[] = [0];
+    for (let i = 1; i < path.length; i++) {
+      const segLen = BABYLON.Vector3.Distance(path[i - 1], path[i]);
+      totalLength += segLen;
+      segmentLengths.push(totalLength);
+    }
+
+    // Calculate duration based on path length
+    const duration = totalLength / speed;
+
+    return new Promise((resolve) => {
+      const startTime = performance.now();
+      let lastRotation = robotNode.rotation.y;
+
+      const animate = () => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Apply easing for smooth start/stop
+        const easedProgress = this.easeInOutCubic(progress);
+
+        // Find position along path based on progress
+        const targetDistance = easedProgress * totalLength;
+
+        // Find which segment we're on
+        let segmentIndex = 0;
+        for (let i = 1; i < segmentLengths.length; i++) {
+          if (segmentLengths[i] >= targetDistance) {
+            segmentIndex = i - 1;
+            break;
+          }
+          segmentIndex = i - 1;
+        }
+
+        // Interpolate within segment
+        const segmentStart = segmentLengths[segmentIndex];
+        const segmentEnd =
+          segmentLengths[Math.min(segmentIndex + 1, segmentLengths.length - 1)];
+        const segmentLength = segmentEnd - segmentStart;
+        const segmentProgress =
+          segmentLength > 0
+            ? (targetDistance - segmentStart) / segmentLength
+            : 0;
+
+        // Get interpolated position
+        const p1 = path[segmentIndex];
+        const p2 = path[Math.min(segmentIndex + 1, path.length - 1)];
+        const newPos = BABYLON.Vector3.Lerp(p1, p2, segmentProgress);
+
+        // Get terrain height
+        const terrainHeight = this.getTerrainHeightAt(newPos.x, newPos.z);
+
+        // Add subtle bobbing based on movement
+        const bobAmount = Math.sin(elapsed * 12) * 0.02 * (1 - progress * 0.5);
+        newPos.y = terrainHeight + bobAmount;
+
+        // Calculate direction for rotation (look ahead)
+        const lookAheadDist = Math.min(targetDistance + 2, totalLength);
+        let lookAheadIndex = segmentIndex;
+        for (let i = segmentIndex; i < segmentLengths.length; i++) {
+          if (segmentLengths[i] >= lookAheadDist) {
+            lookAheadIndex = i;
+            break;
+          }
+          lookAheadIndex = i;
+        }
+
+        const lookAheadPoint = path[Math.min(lookAheadIndex, path.length - 1)];
+        const direction = lookAheadPoint.subtract(newPos);
+        direction.y = 0;
+
+        if (direction.length() > 0.01) {
+          const targetRotation = Math.atan2(direction.x, direction.z);
+
+          // Very smooth rotation interpolation
+          const rotationSmoothing = 0.15; // Lower = smoother
+          lastRotation = this.lerpAngle(
+            lastRotation,
+            targetRotation,
+            rotationSmoothing,
+          );
+          robotNode.rotation.y = lastRotation;
+        }
+
+        // Update position
+        robotNode.position.copyFrom(newPos);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          // Ensure final position is exact
+          const finalPos = path[path.length - 1].clone();
+          finalPos.y = this.getTerrainHeightAt(finalPos.x, finalPos.z);
+          robotNode.position.copyFrom(finalPos);
+          resolve();
+        }
+      };
+
+      requestAnimationFrame(animate);
+    });
+  }
+
+  /**
+   * Cubic ease-in-out function for smooth acceleration/deceleration
+   */
+  private easeInOutCubic(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  /**
+   * Calculate remaining distance along the path from current position
+   */
+  private calculateRemainingPathDistance(
+    path: BABYLON.Vector3[],
+    currentIndex: number,
+    currentPos: BABYLON.Vector3,
+  ): number {
+    let distance = 0;
+    const pos = currentPos.clone();
+    pos.y = 0;
+
+    // Distance to next waypoint
+    if (currentIndex + 1 < path.length) {
+      const next = path[currentIndex + 1].clone();
+      next.y = 0;
+      distance += BABYLON.Vector3.Distance(pos, next);
+    }
+
+    // Sum remaining path segments
+    for (let i = currentIndex + 1; i < path.length - 1; i++) {
+      const p1 = path[i].clone();
+      const p2 = path[i + 1].clone();
+      p1.y = 0;
+      p2.y = 0;
+      distance += BABYLON.Vector3.Distance(p1, p2);
+    }
+
+    return distance;
+  }
+
+  /**
+   * Get terrain height at a given world position (x, z)
+   * Uses raycasting for accurate height detection on heightmap terrain
+   */
+  getTerrainHeightAt(x: number, z: number): number {
+    // If terrain mesh is available and has getHeightAtCoordinates method
+    if (this.terrainMesh) {
+      // Use getHeightAtCoordinates for GroundMesh (accurate for heightmap)
+      const height = this.terrainMesh.getHeightAtCoordinates(x, z);
+      if (height !== undefined && !isNaN(height)) {
+        return height;
+      }
+    }
+
+    // // Fallback: Use raycasting to find terrain height
+    // const ray = new BABYLON.Ray(
+    //   new BABYLON.Vector3(x, 100, z), // Start high above
+    //   new BABYLON.Vector3(0, -1, 0), // Cast downward
+    //   200, // Max distance
+    // );
+
+    // const pickInfo = this.scene.pickWithRay(ray, (mesh) => {
+    //   return mesh.name === "surroundingMountains" || mesh.name.includes("ground");
+    // });
+
+    // if (pickInfo?.hit && pickInfo.pickedPoint) {
+    //   return pickInfo.pickedPoint.y;
+    // }
+
+    // Default fallback to ground level
+    return 0;
+  }
+
+  /**
+   * Get robot by ID
+   */
+  getRobotById(robotId: string):
+    | (Robot & {
+        robotNode?: BABYLON.TransformNode;
+        animationGroups?: BABYLON.AnimationGroup[];
+        isMoving?: boolean;
+      })
+    | undefined {
+    return this.robots.find((r) => r.id === robotId);
+  }
+
+  /**
+   * Get palm by ID
+   */
+  getPalmById(
+    palmId: string,
+  ): (Palm & { palmNode?: BABYLON.TransformNode }) | undefined {
+    return this.palms.find((p) => p.id === palmId);
+  }
+
   createPlaceholderTrees() {
     // Fallback simple trees if models fail to load
     const treeSpacing = 12;
@@ -892,4 +1593,21 @@ export const createStudioSceneManager = (
   props: IStudioSceneManagerProps,
 ): StudioSceneManager => {
   return new StudioSceneManager(props);
+};
+
+export const exportedStudioSceneMethods = (
+  sceneManager: StudioSceneManager,
+): StudioSceneExports => {
+  return {
+    moveRobotToPalm: async (robotId: string, palmId: string) => {
+      return sceneManager.moveRobotToPalm(robotId, palmId);
+    },
+  };
+};
+
+export type StudioSceneExports = {
+  moveRobotToPalm: (
+    robotId: string,
+    palmId: string,
+  ) => Promise<{ robotId: string }>;
 };

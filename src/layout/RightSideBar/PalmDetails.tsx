@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Box,
   Typography,
@@ -29,27 +29,38 @@ interface PalmDetailsProps {
 
 export const PalmDetails = ({ palm }: PalmDetailsProps) => {
   const [showRobotSelect, setShowRobotSelect] = useState<boolean>(false);
-  const { robots, assignRobotToPalm, addActivityLog } = useFarmStore();
+  const {
+    robots,
+    studioSceneMethods,
+    assignRobotToPalm,
+    addActivityLog,
+    completeRobotMission,
+  } = useFarmStore();
   const classes = useStyles();
   const theme = useTheme();
 
-  const availableRobots = robots.filter(
-    (r) => r.status === "idle" && r.battery > 20,
+  const handleSendRobot = useCallback(
+    (robotId: string): void => {
+      setShowRobotSelect(false);
+      assignRobotToPalm(robotId, palm.id);
+      if (studioSceneMethods) {
+        studioSceneMethods.moveRobotToPalm(robotId, palm.id).then(() => {
+          completeRobotMission(robotId);
+          console.log(`Robot ${robotId} moving to palm ${palm.id}`);
+        });
+      }
+    },
+    [assignRobotToPalm, completeRobotMission, palm, studioSceneMethods],
   );
 
-  const handleSendRobot = (robotId: string): void => {
-    assignRobotToPalm(robotId, palm.id);
-    setShowRobotSelect(false);
-  };
-
-  const handleLogActivity = (): void => {
+  const handleLogActivity = useCallback((): void => {
     addActivityLog({
       action: "Manual Inspection",
       details: `Manual inspection logged for ${palm.id}`,
       entityType: "palm",
       entityId: palm.id,
     });
-  };
+  }, [addActivityLog, palm]);
 
   return (
     <Box className={classes.detailsContainer}>
@@ -170,30 +181,55 @@ export const PalmDetails = ({ palm }: PalmDetailsProps) => {
                 <CloseIcon size={20} strokeWidth={2.5} />
               </IconButton>
             </Box>
-            {availableRobots.length > 0 ? (
+            {robots.length > 0 ? (
               <Box className={classes.robotList}>
-                {availableRobots.map((robot) => (
-                  <Button
-                    key={robot.id}
-                    fullWidth
-                    onClick={() => handleSendRobot(robot.id)}
-                    className={classes.robotButton}
-                  >
-                    <Box className={classes.robotButtonContent}>
-                      <Box className={classes.robotInfo}>
-                        <BotIcon
-                          size={18}
-                          strokeWidth={2.5}
-                          style={{ color: "inherit" }}
-                        />
-                        <Typography variant="body2">{robot.id}</Typography>
+                {robots.map((robot) => {
+                  const isIdle = robot.status === "idle";
+                  const statusLabels: Record<string, string> = {
+                    idle: "Idle",
+                    moving: "Moving",
+                    scanning: "Scanning",
+                    returning: "Returning",
+                  };
+                  const statusLabel =
+                    statusLabels[robot.status] || robot.status;
+
+                  return (
+                    <Button
+                      key={robot.id}
+                      fullWidth
+                      disabled={!isIdle}
+                      onClick={() => handleSendRobot(robot.id)}
+                      className={classes.robotButton}
+                      sx={{
+                        opacity: isIdle ? 1 : 0.5,
+                      }}
+                    >
+                      <Box className={classes.robotButtonContent}>
+                        <Box className={classes.robotInfo}>
+                          <BotIcon
+                            size={18}
+                            strokeWidth={2.5}
+                            style={{ color: "inherit" }}
+                          />
+                          <Box>
+                            <Typography variant="body2">{robot.id}</Typography>
+                            <Typography
+                              variant="caption"
+                              color="textSecondary"
+                              sx={{ fontSize: "0.7rem" }}
+                            >
+                              {statusLabel}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography variant="caption" color="textSecondary">
+                          {robot.battery}%
+                        </Typography>
                       </Box>
-                      <Typography variant="caption" color="textSecondary">
-                        {robot.battery}%
-                      </Typography>
-                    </Box>
-                  </Button>
-                ))}
+                    </Button>
+                  );
+                })}
               </Box>
             ) : (
               <Typography variant="body2" color="textSecondary">

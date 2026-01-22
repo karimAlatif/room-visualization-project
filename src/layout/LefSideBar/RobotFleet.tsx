@@ -15,6 +15,7 @@ interface RobotFleetProps {
 
 const RobotCard: React.FC<{ robot: Robot }> = ({ robot }) => {
   const classes = useLeftSidebarStyles();
+  const isIdle = robot.status === "idle";
 
   const getBatteryDotClass = () => {
     if (robot.battery > 50) return classes.robotBatteryDotHealthy;
@@ -22,8 +23,25 @@ const RobotCard: React.FC<{ robot: Robot }> = ({ robot }) => {
     return classes.robotBatteryDotCritical;
   };
 
+  const getStatusLabel = () => {
+    const statusLabels: Record<string, string> = {
+      idle: "Idle",
+      moving: "Moving",
+      scanning: "Scanning",
+      returning: "Returning",
+    };
+    return statusLabels[robot.status] || robot.status;
+  };
+
   return (
-    <Card className={classes.robotCard}>
+    <Card
+      className={classes.robotCard}
+      sx={{
+        opacity: isIdle ? 1 : 0.5,
+        pointerEvents: isIdle ? "auto" : "none",
+        transition: "opacity 0.3s ease",
+      }}
+    >
       <CardContent className={classes.robotCardContent}>
         <Stack
           direction="row"
@@ -40,7 +58,7 @@ const RobotCard: React.FC<{ robot: Robot }> = ({ robot }) => {
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Typography variant="caption" className={classes.robotStatus}>
-              {robot.status}
+              {getStatusLabel()}
             </Typography>
             <Box className={getBatteryDotClass()} />
           </Stack>

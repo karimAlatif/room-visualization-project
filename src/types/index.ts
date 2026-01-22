@@ -1,17 +1,32 @@
 import { Vector3 } from "babylonjs";
+import { StudioSceneExports } from "src/Babylon/StudioScene/studioSceneManager";
 
 export type PalmStatus = "healthy" | "warning" | "critical";
 export type RobotStatus = "idle" | "moving" | "scanning" | "returning";
 export type AlertSeverity = "high" | "medium" | "info";
 
 export const FarmSize = 200;
-export const FarmNumberOfPalms = 150;
+export const FarmNumberOfPalms = 100;
 export const FarmNumberOfRobots = 5;
 export const FarmNumberOfAlerts = 5;
 export const FarmNumberOfActivityLogs = 50;
 export const FarmNumberOfPalmVarieties = 4;
 export const FarmNumberOfPalmStatuses = 5;
 export const FarmNumberOfRobotStatuses = 4;
+
+
+export const PalmModelPaths = [
+  "models/palms/Palm_1178_High_Low_Thin_2.glb",
+  "models/palms/PalmDate_378.glb"
+  // Add more model paths here as needed
+];
+
+// Robot model path
+export const RobotModelPath = "models/robots/robot_1.glb";
+
+// Zone 2 boundaries (for robot placement)
+export const ZONE2_INNER_RADIUS = FarmSize; // Start of zone 2 (after farm area)
+export const ZONE2_OUTER_RADIUS = FarmSize + 45; // End of zone 2
 
 export interface Palm {
   id: string;
@@ -62,8 +77,10 @@ export interface FarmState {
   selectedPalmId?: string;
   selectedRobotId?: string;
   temperature: number;
+  studioSceneMethods?: StudioSceneExports;
 
   // Actions
+  setStudioSceneMethods: (methods: StudioSceneExports) => void;
   selectPalm: (id: string) => void;
   selectRobot: (id: string) => void;
   assignRobotToPalm: (robotId: string, palmId: string) => void;
@@ -307,7 +324,7 @@ export const generateRobots = (): Robot[] => {
     {
       id: "RB-005",
       position: new Vector3(0, 0, 0),
-      battery: 12,
+      battery: 50,
       status: "idle",
     },
   ];
