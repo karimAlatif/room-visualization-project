@@ -12,7 +12,7 @@ export const LeftSidebar = () => {
   const [activeTab, setActiveTab] = useState<"overview" | "trees">("overview");
   const classes = useLeftSidebarStyles();
 
-  const { palms, robots, temperature, selectedPalmId, selectPalm } =
+  const { palms, robots, temperature, selectedEntity, selectEntity } =
     useFarmStore();
 
   const healthyCount = palms.filter((p) => p.status === "healthy").length;
@@ -72,8 +72,12 @@ export const LeftSidebar = () => {
           {activeTab === "trees" && (
             <TreeList
               palms={palms}
-              selectedPalmId={selectedPalmId}
-              onSelectPalm={selectPalm}
+              selectedPalmId={
+                selectedEntity?.type === "palm" ? selectedEntity.id : undefined
+              }
+              onSelectPalm={(palmId) =>
+                selectEntity({ id: palmId, type: "palm" })
+              }
             />
           )}
         </Box>
