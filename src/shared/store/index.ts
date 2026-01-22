@@ -107,4 +107,12 @@ export const useFarmStore = create<FarmState>((set, get) => ({
     }));
   },
 
+  updateRobotStatus: (robotId, status) => {
+    set((state) => ({
+      robots: state.robots.map((robot) =>
+        robot.id === robotId ? { ...robot, status } : robot
+      ),
+    }));
+  },
+
 }));

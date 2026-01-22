@@ -60,7 +60,9 @@ export const RightPanel = () => {
           <PalmDetails palm={selectedEntity.entity as Palm} />
         )}
         {selectedEntity?.type === "robot" && (
-          <RobotDetails robot={selectedEntity.entity as Robot} />
+          <RobotDetails
+            robot={robots.find((r) => r.id === selectedEntity.id) as Robot}
+          />
         )}
       </Box>
     </Box>

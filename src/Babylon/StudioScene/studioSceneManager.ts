@@ -458,9 +458,9 @@ export class StudioSceneManager {
     // 3. Load and place robots in zone 2
     await this.loadAndPlaceRobots();
 
-    setTimeout(() => {
-      this.scene.debugLayer.show();
-    }, 5000);
+    // setTimeout(() => {
+    //   this.scene.debugLayer.show();
+    // }, 5000);
 
     // 4. Add visual boundary indicator
     this.createFarmBoundary();
@@ -1963,8 +1963,21 @@ export class StudioSceneManager {
         ? new BABYLON.Color3(0.07, 0.3, 0.15) // Green for palms
         : new BABYLON.Color3(0.07, 0.16, 0.27); // Blue for robots
 
-    this.createSelectionCircle(position, color, entityType === "robot" ? 3 : 5);
-    this.animateCameraToTarget(position);
+    // For robots: use smaller radius (1/5 since robot scale is 5), attach to robot node, and lock camera
+    if (entityType === "robot") {
+      const robot = this.robots.find((r) => r.id === entityId);
+      if (robot?.robotNode) {
+        // Circle radius 0.6 (base 3 / 5 for robot scale)
+        this.createSelectionCircle(position, color, 0.6, robot.robotNode);
+        // Lock camera to follow robot
+        if (this.camera) {
+          this.camera.lockedTarget = robot.robotNode;
+        }
+      }
+    } else {
+      this.createSelectionCircle(position, color, 5);
+      this.animateCameraToTarget(position);
+    }
 
     // Notify callback
     if (this.onEntitySelectedCallback) {
@@ -2026,6 +2039,11 @@ export class StudioSceneManager {
    * Clear the current selection
    */
   private clearSelection(): void {
+    // Unlock camera from any tracked target
+    if (this.camera) {
+      this.camera.lockedTarget = null;
+    }
+
     // Stop and dispose animation group
     if (this.selectionAnimationGroup) {
       this.selectionAnimationGroup.stop();
@@ -2068,11 +2086,13 @@ export class StudioSceneManager {
 
   /**
    * Create a simple animated selection circle on the ground
+   * @param parentNode Optional parent node to attach circle to (for robots)
    */
   private createSelectionCircle(
     position: BABYLON.Vector3,
     color: BABYLON.Color3,
     radius: number = 5,
+    parentNode?: BABYLON.TransformNode,
   ): void {
     // Create a horizontal disc on the ground
     this.selectionCircle = BABYLON.MeshBuilder.CreateDisc(
@@ -2084,14 +2104,22 @@ export class StudioSceneManager {
       this.scene,
     );
 
-    // Position flat on ground (horizontal)
-    this.selectionCircle.position = new BABYLON.Vector3(
-      position.x,
-      this.terrainMesh &&
-        this.terrainMesh.getHeightAtCoordinates(position.x, position.z) + 0.1,
-      position.z,
-    );
-    this.selectionCircle.rotation.x = Math.PI / 2; // Lay flat on ground
+    // If parent node provided (robot), attach circle as child at ground level
+    if (parentNode) {
+      this.selectionCircle.parent = parentNode;
+      // Position at ground level relative to parent (robot is scaled, so adjust y)
+      this.selectionCircle.position = new BABYLON.Vector3(0, 0.02, 0); // Slight offset above ground
+      this.selectionCircle.rotation.x = Math.PI / 2; // Lay flat on ground
+    } else {
+      // Position flat on ground (horizontal) - for palms
+      this.selectionCircle.position = new BABYLON.Vector3(
+        position.x,
+        this.terrainMesh &&
+          this.terrainMesh.getHeightAtCoordinates(position.x, position.z) + 0.1,
+        position.z,
+      );
+      this.selectionCircle.rotation.x = Math.PI / 2; // Lay flat on ground
+    }
 
     // Glowing material
     const material = new BABYLON.StandardMaterial("selectionMat", this.scene);

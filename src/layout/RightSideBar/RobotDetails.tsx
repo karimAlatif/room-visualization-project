@@ -12,7 +12,8 @@ interface RobotDetailsProps {
 
 export const RobotDetails = ({ robot }: RobotDetailsProps) => {
   const classes = useStyles();
-  const { addActivityLog, studioSceneMethods } = useFarmStore();
+  const { studioSceneMethods, addActivityLog, updateRobotStatus } =
+    useFarmStore();
 
   // const handleReturnToBase = (): void => {
   //   returnRobotToBase(robot.id);
@@ -34,6 +35,7 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
       entityType: "robot",
       entityId: robot.id,
     });
+    updateRobotStatus(robot.id, "moving");
     studioSceneMethods.startRobotFarmTour(robot.id).then(() => {
       addActivityLog({
         action: `FARM TOUR`,
@@ -41,8 +43,9 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
         entityType: "robot",
         entityId: robot.id,
       });
+      updateRobotStatus(robot.id, "idle");
     });
-  }, [addActivityLog, robot, studioSceneMethods]);
+  }, [addActivityLog, robot, studioSceneMethods, updateRobotStatus]);
 
   // const statusConfig = getRobotStatusConfig(robot.status);
 
@@ -93,7 +96,7 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
             variant="outlined"
             startIcon={<BotIcon size={18} strokeWidth={2.5} />}
             onClick={handleOnFarmTour}
-            disabled={robot.status === "returning"}
+            disabled={robot.status === "moving"}
           >
             Take farm tour
           </Button>

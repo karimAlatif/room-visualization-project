@@ -6,7 +6,7 @@ export type RobotStatus = "idle" | "moving" | "scanning" | "returning";
 export type AlertSeverity = "high" | "medium" | "info";
 
 export const FarmSize = 200;
-export const FarmNumberOfPalms = 25;
+export const FarmNumberOfPalms = 75;
 export const FarmNumberOfRobots = 5;
 export const FarmNumberOfAlerts = 5;
 export const FarmNumberOfActivityLogs = 50;
@@ -93,6 +93,7 @@ export interface FarmState {
   returnRobotToBase: (robotId: string) => void;
   addActivityLog: (log: Omit<ActivityLog, "id" | "timestamp">) => void;
   updatePalmStatus: (palmId: string, status: PalmStatus) => void;
+  updateRobotStatus: (robotId: string, status: RobotStatus) => void;
 }
 
 export const generateSmartTreeDistribution = (): Palm[] => {
