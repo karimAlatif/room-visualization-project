@@ -1160,6 +1160,206 @@ export class StudioSceneManager {
   }
 
   /**
+   * Start a robot on a full tour of all palms in the farm
+   * The robot visits each palm, waits to scan, then moves to the next
+   * Palms are visited in an optimized order (nearest neighbor algorithm)
+   * @param robotId - The ID of the robot to send on tour
+   * @param waitTimePerPalm - Time in seconds to wait at each palm (default: 3)
+   * @param onProgress - Optional callback for progress updates
+   */
+  async startRobotFarmTour(
+    robotId: string,
+    waitTimePerPalm: number = 3,
+    onProgress?: (current: number, total: number, palmId: string) => void
+  ): Promise<{ robotId: string; visited: string[]; cancelled: boolean }> {
+    const robot = this.robots.find((r) => r.id === robotId);
+    
+    if (!robot) {
+      console.error(`Robot ${robotId} not found`);
+      return { robotId, visited: [], cancelled: true };
+    }
+
+    if (!robot.robotNode) {
+      console.error(`Robot ${robotId} has no node`);
+      return { robotId, visited: [], cancelled: true };
+    }
+
+    if (robot.isMoving) {
+      console.warn(`Robot ${robotId} is already moving`);
+      return { robotId, visited: [], cancelled: true };
+    }
+
+    // Get optimized palm visiting order using nearest neighbor algorithm
+    const orderedPalms = this.getOptimizedPalmOrder(robot.robotNode.position.clone());
+    const visited: string[] = [];
+    const totalPalms = orderedPalms.length;
+
+    console.log(`🤖 Robot ${robotId} starting farm tour - ${totalPalms} palms to visit`);
+
+    // Find scanning animation
+    const scanAnimation = robot.animationGroups?.find((ag) =>
+      ag.name.includes("2LYN") || ag.name.includes("scan") || ag.name.includes("idle")
+    );
+
+    for (let i = 0; i < orderedPalms.length; i++) {
+      const palm = orderedPalms[i];
+      
+      // Report progress
+      if (onProgress) {
+        onProgress(i + 1, totalPalms, palm.id);
+      }
+
+      console.log(`📍 Robot ${robotId} heading to palm ${i + 1}/${totalPalms}: ${palm.id}`);
+
+      // Select the current palm for visual feedback
+      // this.selectEntity(palm.id, "palm");
+
+      // Move to the palm
+      await this.moveRobotToPalm(robotId, palm.id);
+      visited.push(palm.id);
+
+      // Wait and "scan" the palm
+      if (scanAnimation) {
+        scanAnimation.start(true);
+      }
+
+      // Create scanning visual effect
+      await this.performPalmScan(palm, waitTimePerPalm);
+
+      if (scanAnimation) {
+        scanAnimation.stop();
+      }
+
+      console.log(`✅ Robot ${robotId} completed scan of palm ${palm.id}`);
+    }
+
+    // Clear selection at the end
+    this.clearSelection();
+
+    console.log(`🎉 Robot ${robotId} completed farm tour! Visited ${visited.length} palms`);
+    return { robotId, visited, cancelled: false };
+  }
+
+  /**
+   * Get palms in optimized visiting order using nearest neighbor algorithm
+   * This minimizes total travel distance
+   */
+  private getOptimizedPalmOrder(startPosition: BABYLON.Vector3): (Palm & { palmNode?: BABYLON.TransformNode })[] {
+    const remaining = [...this.palms];
+    const ordered: (Palm & { palmNode?: BABYLON.TransformNode })[] = [];
+    let currentPos = startPosition.clone();
+
+    while (remaining.length > 0) {
+      // Find nearest palm
+      let nearestIndex = 0;
+      let nearestDistance = Infinity;
+
+      for (let i = 0; i < remaining.length; i++) {
+        const palm = remaining[i];
+        const palmPos = palm.palmNode?.position || new BABYLON.Vector3(palm.position.x, 0, palm.position.z);
+        const distance = BABYLON.Vector3.Distance(currentPos, palmPos);
+        
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = i;
+        }
+      }
+
+      // Add nearest palm to ordered list
+      const nearest = remaining.splice(nearestIndex, 1)[0];
+      ordered.push(nearest);
+      currentPos = nearest.palmNode?.position.clone() || new BABYLON.Vector3(nearest.position.x, 0, nearest.position.z);
+    }
+
+    return ordered;
+  }
+
+  /**
+   * Perform a scanning effect at a palm
+   * Shows a visual scanning ring animation
+   */
+  private async performPalmScan(palm: Palm & { palmNode?: BABYLON.TransformNode }, duration: number): Promise<void> {
+    if (!palm.palmNode) {
+      await this.delay(duration * 1000);
+      return;
+    }
+
+    const position = palm.palmNode.position.clone();
+
+    // Create scanning ring
+    const scanRing = BABYLON.MeshBuilder.CreateTorus(
+      "scanRing",
+      {
+        diameter: 1,
+        thickness: 0.1,
+        tessellation: 32,
+      },
+      this.scene
+    );
+    scanRing.position = new BABYLON.Vector3(position.x, 0.2, position.z);
+    scanRing.rotation.x = Math.PI / 2;
+
+    // Scanning material
+    const scanMat = new BABYLON.StandardMaterial("scanMat", this.scene);
+    scanMat.emissiveColor = new BABYLON.Color3(0.2, 0.8, 1.0);
+    scanMat.alpha = 0.8;
+    scanMat.disableLighting = true;
+    scanRing.material = scanMat;
+
+    // Expand and fade animation
+    const expandAnim = new BABYLON.Animation(
+      "expand",
+      "scaling",
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    );
+    expandAnim.setKeys([
+      { frame: 0, value: new BABYLON.Vector3(1, 1, 1) },
+      { frame: 30, value: new BABYLON.Vector3(8, 8, 1) },
+      { frame: 60, value: new BABYLON.Vector3(1, 1, 1) }
+    ]);
+
+    const fadeAnim = new BABYLON.Animation(
+      "fade",
+      "material.alpha",
+      30,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+    );
+    fadeAnim.setKeys([
+      { frame: 0, value: 0.8 },
+      { frame: 30, value: 0.1 },
+      { frame: 60, value: 0.8 }
+    ]);
+
+    // Run animations for the duration
+    const animatable = this.scene.beginDirectAnimation(
+      scanRing,
+      [expandAnim, fadeAnim],
+      0,
+      60,
+      true,
+      1
+    );
+
+    // Wait for scan duration
+    await this.delay(duration * 1000);
+
+    // Stop and cleanup
+    animatable.stop();
+    scanRing.dispose();
+    scanMat.dispose();
+  }
+
+  /**
+   * Utility delay function
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
    * Calculate a path from start to end that avoids palm trees
    * Uses a simple waypoint-based pathfinding approach
    */
@@ -2021,6 +2221,13 @@ export const exportedStudioSceneMethods = (
     moveRobotToPalm: async (robotId: string, palmId: string) => {
       return sceneManager.moveRobotToPalm(robotId, palmId);
     },
+    startRobotFarmTour: async (
+      robotId: string,
+      waitTimePerPalm?: number,
+      onProgress?: (current: number, total: number, palmId: string) => void
+    ) => {
+      return sceneManager.startRobotFarmTour(robotId, waitTimePerPalm, onProgress);
+    },
     selectPalm: (palmId: string | null) => {
       return sceneManager.selectPalm(palmId);
     },
@@ -2055,6 +2262,11 @@ export type StudioSceneExports = {
     robotId: string,
     palmId: string,
   ) => Promise<{ robotId: string }>;
+  startRobotFarmTour: (
+    robotId: string,
+    waitTimePerPalm?: number,
+    onProgress?: (current: number, total: number, palmId: string) => void
+  ) => Promise<{ robotId: string; visited: string[]; cancelled: boolean }>;
   selectPalm: (palmId: string | null) => {
     success: boolean;
     palmId: string | null;

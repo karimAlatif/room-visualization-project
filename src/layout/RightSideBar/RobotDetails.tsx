@@ -1,8 +1,8 @@
-import React from "react";
-import { Box, Typography, Paper, Divider } from "@mui/material";
-// import { Zap as BotIcon } from "lucide-react";
+import React, { useCallback } from "react";
+import { Box, Typography, Paper, Button, Divider } from "@mui/material";
+import { Zap as BotIcon } from "lucide-react";
 import { useStyles } from "./RightSidebar.styles";
-// import { useFarmStore } from "src/shared/store";
+import { useFarmStore } from "src/shared/store";
 import { Robot } from "src/types";
 import { ProgressBar } from "./ProgressBar";
 
@@ -12,7 +12,7 @@ interface RobotDetailsProps {
 
 export const RobotDetails = ({ robot }: RobotDetailsProps) => {
   const classes = useStyles();
-  // const { returnRobotToBase, addActivityLog } = useFarmStore();
+  const { addActivityLog, studioSceneMethods } = useFarmStore();
 
   // const handleReturnToBase = (): void => {
   //   returnRobotToBase(robot.id);
@@ -23,6 +23,26 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
   //     entityId: robot.id,
   //   });
   // };
+
+  const handleOnFarmTour = useCallback((): void => {
+    if (!studioSceneMethods) {
+      return;
+    }
+    addActivityLog({
+      action: `FARM TOUR`,
+      details: `${robot.id} starting farm tour`,
+      entityType: "robot",
+      entityId: robot.id,
+    });
+    studioSceneMethods.startRobotFarmTour(robot.id).then(() => {
+      addActivityLog({
+        action: `FARM TOUR`,
+        details: `${robot.id} end from farm tour`,
+        entityType: "robot",
+        entityId: robot.id,
+      });
+    });
+  }, [addActivityLog, robot, studioSceneMethods]);
 
   // const statusConfig = getRobotStatusConfig(robot.status);
 
@@ -63,7 +83,7 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
       </Box>
 
       {/* Actions */}
-      {/* <Box className={classes.actionsContainer}>
+      <Box className={classes.actionsContainer}>
         <Typography variant="caption" className={classes.actionsTitle}>
           Actions
         </Typography>
@@ -72,13 +92,13 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
             fullWidth
             variant="outlined"
             startIcon={<BotIcon size={18} strokeWidth={2.5} />}
-            onClick={handleReturnToBase}
-            disabled={robot.status === "returning" || robot.status === "idle"}
+            onClick={handleOnFarmTour}
+            disabled={robot.status === "returning"}
           >
-            Return to Base
+            Take farm tour
           </Button>
         </Box>
-      </Box> */}
+      </Box>
     </Box>
   );
 };
