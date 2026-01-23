@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -31,12 +31,33 @@ export const LeftSidebar = () => {
     selectEntity,
   } = useFarmStore();
 
-  const healthyCount = palms.filter((p) => p.status === "healthy").length;
-  const warningCount = palms.filter((p) => p.status === "warning").length;
-  const criticalCount = palms.filter((p) => p.status === "critical").length;
-  const activeRobots = robots.filter((r) => r.status !== "idle").length;
-  const healthyPercent =
-    palms.length > 0 ? Math.round((healthyCount / palms.length) * 100) : 0;
+  const {
+    healthyCount,
+    warningCount,
+    criticalCount,
+    activeRobots,
+    healthyPercent,
+  } = useMemo(() => {
+    let healthyCount = 0,
+      warningCount = 0,
+      criticalCount = 0;
+    palms.forEach((palm) => {
+      if (palm.status === "healthy") healthyCount = (healthyCount || 0) + 1;
+      else if (palm.status === "warning")
+        warningCount = (warningCount || 0) + 1;
+      else if (palm.status === "critical")
+        criticalCount = (criticalCount || 0) + 1;
+    });
+
+    return {
+      healthyCount,
+      warningCount,
+      criticalCount,
+      healthyPercent:
+        palms.length > 0 ? Math.round((healthyCount / palms.length) * 100) : 0,
+      activeRobots: robots.filter((r) => r.status !== "idle").length,
+    };
+  }, [palms, robots]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(

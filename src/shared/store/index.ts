@@ -148,14 +148,16 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       entityId: robotId,
     });
     updateRobotStatus(robotId, "moving");
-    studioSceneMethods.startRobotFarmTour(robotId).then(() => {
+    studioSceneMethods.startRobotFarmTour(robotId).then(({cancelled}) => {
       addActivityLog({
         action: `FARM TOUR`,
         details: `${robotId} end from farm tour`,
         entityType: "robot",
         entityId: robotId,
       });
-      updateRobotStatus(robotId, "idle");
+      if(!cancelled){
+        updateRobotStatus(robotId, "idle");
+      }
     });
   },
 }));

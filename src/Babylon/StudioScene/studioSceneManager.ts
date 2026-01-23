@@ -62,6 +62,9 @@ export class StudioSceneManager {
   private clearSelectionUI: () => void;
   private takeFarmTour: (robotId: string) => void;
 
+  // Farm tour tracking for cancellation
+  private activeFarmTours: Map<string, AbortController> = new Map();
+
   constructor(props: IStudioSceneManagerProps) {
     this.engine = props.engine;
     this.canvas = props.canvas;
@@ -1059,7 +1062,13 @@ export class StudioSceneManager {
   async moveRobotToPalm(
     robotId: string,
     palmId: string,
+    isTour: boolean = false,
   ): Promise<{ robotId: string }> {
+    // Cancel any active farm tour for this robot
+    if (!isTour) {
+      this.cancelRobotFarmTour(robotId);
+    }
+
     // Find the robot and palm
     const robot = this.robots.find((r) => r.id === robotId);
     const palm = this.palms.find((p) => p.id === palmId);
@@ -1075,10 +1084,10 @@ export class StudioSceneManager {
       return { robotId };
     }
 
-    // if (robot.isMoving) {
-    //   console.warn(`Robot ${robotId} is already moving`);
-    //   return { robotId };
-    // }
+    // Find scanning animation
+    const scanAnimation = robot.animationGroups?.find((ag) =>
+      ag.name.includes("Playing"),
+    );
 
     // Mark robot as moving
     robot.isMoving = true;
@@ -1110,6 +1119,18 @@ export class StudioSceneManager {
     // Animate along the path with specified speed
     await this.animateRobotAlongPath(robot, path, speed);
 
+    // Wait and "scan" the palm
+    if (scanAnimation) {
+      scanAnimation.start(true);
+    }
+
+    // Create scanning visual effect
+    await this.performPalmScan(palm, 3);
+
+    if (scanAnimation) {
+      scanAnimation.stop();
+    }
+    
     // Stop walking animation and mark as completed
     if (walkAnimation) {
       walkAnimation.stop();
@@ -1137,10 +1158,13 @@ export class StudioSceneManager {
   async startRobotFarmTour(
     robotId: string,
     waitTimePerPalm: number = 3,
-    onProgress?: (current: number, total: number, palmId: string) => void
+    onProgress?: (current: number, total: number, palmId: string) => void,
   ): Promise<{ robotId: string; visited: string[]; cancelled: boolean }> {
+    // Cancel any previous farm tour for this robot
+    this.cancelRobotFarmTour(robotId);
+
     const robot = this.robots.find((r) => r.id === robotId);
-    
+
     if (!robot) {
       console.error(`Robot ${robotId} not found`);
       return { robotId, visited: [], cancelled: true };
@@ -1156,8 +1180,14 @@ export class StudioSceneManager {
       return { robotId, visited: [], cancelled: true };
     }
 
+    // Create abort controller for this farm tour
+    const abortController = new AbortController();
+    this.activeFarmTours.set(robotId, abortController);
+
     // Get optimized palm visiting order using nearest neighbor algorithm
-    const orderedPalms = this.getOptimizedPalmOrder(robot.robotNode.position.clone());
+    const orderedPalms = this.getOptimizedPalmOrder(
+      robot.robotNode.position.clone(),
+    );
     const visited: string[] = [];
     const totalPalms = orderedPalms.length;
 
@@ -1165,53 +1195,93 @@ export class StudioSceneManager {
 
     // Find scanning animation
     const scanAnimation = robot.animationGroups?.find((ag) =>
-      ag.name.includes("2LYN") || ag.name.includes("scan") || ag.name.includes("idle")
+      ag.name.includes("Playing"),
     );
 
-    for (let i = 0; i < orderedPalms.length; i++) {
-      const palm = orderedPalms[i];
-      
-      // Report progress
-      if (onProgress) {
-        onProgress(i + 1, totalPalms, palm.id);
+    try {
+      for (let i = 0; i < orderedPalms.length; i++) {
+        // Check if tour was cancelled
+        if (abortController.signal.aborted) {
+          console.log(`🛑 Robot ${robotId} farm tour was cancelled`);
+          return { robotId, visited, cancelled: true };
+        }
+
+        const palm = orderedPalms[i];
+
+        // Report progress
+        if (onProgress) {
+          onProgress(i + 1, totalPalms, palm.id);
+        }
+
+        // console.log(`📍 Robot ${robotId} heading to palm ${i + 1}/${totalPalms}: ${palm.id}`);
+
+        // Select the current palm for visual feedback
+        // this.selectEntity(palm.id, "palm");
+
+        // Move to the palm
+        await this.moveRobotToPalm(robotId, palm.id, true);
+        visited.push(palm.id);
+
+        // Check again after movement
+        if (abortController.signal.aborted) {
+          console.log(
+            `🛑 Robot ${robotId} farm tour was cancelled during movement`,
+          );
+          return { robotId, visited, cancelled: true };
+        }
+
+        // Wait and "scan" the palm
+        if (scanAnimation) {
+          scanAnimation.start(true);
+        }
+
+        // Create scanning visual effect
+        await this.performPalmScan(palm, waitTimePerPalm);
+
+        if (scanAnimation) {
+          scanAnimation.stop();
+        }
+
+        // console.log(`✅ Robot ${robotId} completed scan of palm ${palm.id}`);
       }
 
-      // console.log(`📍 Robot ${robotId} heading to palm ${i + 1}/${totalPalms}: ${palm.id}`);
+      // Clear selection at the end
+      this.clearSelection();
 
-      // Select the current palm for visual feedback
-      // this.selectEntity(palm.id, "palm");
+      // Remove from active tours on success
+      this.activeFarmTours.delete(robotId);
 
-      // Move to the palm
-      await this.moveRobotToPalm(robotId, palm.id);
-      visited.push(palm.id);
-
-      // Wait and "scan" the palm
-      if (scanAnimation) {
-        scanAnimation.start(true);
-      }
-
-      // Create scanning visual effect
-      await this.performPalmScan(palm, waitTimePerPalm);
-
-      if (scanAnimation) {
-        scanAnimation.stop();
-      }
-
-      // console.log(`✅ Robot ${robotId} completed scan of palm ${palm.id}`);
+      // console.log(`🎉 Robot ${robotId} completed farm tour! Visited ${visited.length} palms`);
+      return { robotId, visited, cancelled: false };
+    } catch (error) {
+      // Clean up on error
+      this.activeFarmTours.delete(robotId);
+      console.error(`Error during robot ${robotId} farm tour:`, error);
+      return { robotId, visited, cancelled: true };
     }
+  }
 
-    // Clear selection at the end
-    this.clearSelection();
-
-    // console.log(`🎉 Robot ${robotId} completed farm tour! Visited ${visited.length} palms`);
-    return { robotId, visited, cancelled: false };
+  /**
+   * Cancel an active farm tour for a specific robot
+   * This will stop the tour gracefully and clean up resources
+   * @param robotId - The ID of the robot whose tour should be cancelled
+   */
+  private cancelRobotFarmTour(robotId: string): void {
+    const abortController = this.activeFarmTours.get(robotId);
+    if (abortController) {
+      abortController.abort();
+      this.activeFarmTours.delete(robotId);
+      console.log(`🛑 Cancelled farm tour for robot ${robotId}`);
+    }
   }
 
   /**
    * Get palms in optimized visiting order using nearest neighbor algorithm
    * This minimizes total travel distance
    */
-  private getOptimizedPalmOrder(startPosition: BABYLON.Vector3): (Palm & { palmNode?: BABYLON.TransformNode })[] {
+  private getOptimizedPalmOrder(
+    startPosition: BABYLON.Vector3,
+  ): (Palm & { palmNode?: BABYLON.TransformNode })[] {
     const remaining = [...this.palms];
     const ordered: (Palm & { palmNode?: BABYLON.TransformNode })[] = [];
     let currentPos = startPosition.clone();
@@ -1223,9 +1293,11 @@ export class StudioSceneManager {
 
       for (let i = 0; i < remaining.length; i++) {
         const palm = remaining[i];
-        const palmPos = palm.palmNode?.position || new BABYLON.Vector3(palm.position.x, 0, palm.position.z);
+        const palmPos =
+          palm.palmNode?.position ||
+          new BABYLON.Vector3(palm.position.x, 0, palm.position.z);
         const distance = BABYLON.Vector3.Distance(currentPos, palmPos);
-        
+
         if (distance < nearestDistance) {
           nearestDistance = distance;
           nearestIndex = i;
@@ -1235,7 +1307,9 @@ export class StudioSceneManager {
       // Add nearest palm to ordered list
       const nearest = remaining.splice(nearestIndex, 1)[0];
       ordered.push(nearest);
-      currentPos = nearest.palmNode?.position.clone() || new BABYLON.Vector3(nearest.position.x, 0, nearest.position.z);
+      currentPos =
+        nearest.palmNode?.position.clone() ||
+        new BABYLON.Vector3(nearest.position.x, 0, nearest.position.z);
     }
 
     return ordered;
@@ -1245,7 +1319,10 @@ export class StudioSceneManager {
    * Perform a scanning effect at a palm
    * Shows a visual scanning ring animation
    */
-  private async performPalmScan(palm: Palm & { palmNode?: BABYLON.TransformNode }, duration: number): Promise<void> {
+  private async performPalmScan(
+    palm: Palm & { palmNode?: BABYLON.TransformNode },
+    duration: number,
+  ): Promise<void> {
     if (!palm.palmNode) {
       await this.delay(duration * 1000);
       return;
@@ -1261,7 +1338,7 @@ export class StudioSceneManager {
         thickness: 0.1,
         tessellation: 32,
       },
-      this.scene
+      this.scene,
     );
     scanRing.position = new BABYLON.Vector3(position.x, 0.2, position.z);
     scanRing.rotation.x = Math.PI / 2;
@@ -1279,12 +1356,12 @@ export class StudioSceneManager {
       "scaling",
       30,
       BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
     );
     expandAnim.setKeys([
       { frame: 0, value: new BABYLON.Vector3(1, 1, 1) },
       { frame: 30, value: new BABYLON.Vector3(8, 8, 1) },
-      { frame: 60, value: new BABYLON.Vector3(1, 1, 1) }
+      { frame: 60, value: new BABYLON.Vector3(1, 1, 1) },
     ]);
 
     const fadeAnim = new BABYLON.Animation(
@@ -1292,12 +1369,12 @@ export class StudioSceneManager {
       "material.alpha",
       30,
       BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE,
     );
     fadeAnim.setKeys([
       { frame: 0, value: 0.8 },
       { frame: 30, value: 0.1 },
-      { frame: 60, value: 0.8 }
+      { frame: 60, value: 0.8 },
     ]);
 
     // Run animations for the duration
@@ -1307,7 +1384,7 @@ export class StudioSceneManager {
       0,
       60,
       true,
-      1
+      1,
     );
 
     // Wait for scan duration
@@ -1812,7 +1889,7 @@ export class StudioSceneManager {
             const entity = this.findEntityFromMesh(pickResult.pickedMesh);
             if (entity) {
               this.selectEntity(entity.id, entity.type);
-            }else{
+            } else {
               this.clearSelection();
             }
           }
@@ -1927,10 +2004,10 @@ export class StudioSceneManager {
         this.animateCameraToTarget(position);
         // Lock camera to follow robot
         setTimeout(() => {
-            if (this.camera) {
+          if (this.camera) {
             this.camera.targetHost = robot.robotNode as BABYLON.AbstractMesh;
           }
-          }, 1000);
+        }, 1000);
       }
     }
 
@@ -2002,8 +2079,7 @@ export class StudioSceneManager {
    * Clear the current selection
    */
   clearSelection(): void {
-
-    if(this.clearSelectionUI){
+    if (this.clearSelectionUI) {
       this.clearSelectionUI();
     }
     // Unlock camera from any tracked target
@@ -2219,9 +2295,13 @@ export const exportedStudioSceneMethods = (
     startRobotFarmTour: async (
       robotId: string,
       waitTimePerPalm?: number,
-      onProgress?: (current: number, total: number, palmId: string) => void
+      onProgress?: (current: number, total: number, palmId: string) => void,
     ) => {
-      return sceneManager.startRobotFarmTour(robotId, waitTimePerPalm, onProgress);
+      return sceneManager.startRobotFarmTour(
+        robotId,
+        waitTimePerPalm,
+        onProgress,
+      );
     },
     selectPalm: (palmId: string | null) => {
       return sceneManager.selectPalm(palmId);
@@ -2251,7 +2331,7 @@ export const exportedStudioSceneMethods = (
     },
     clearSelection: () => {
       sceneManager.clearSelection();
-    }
+    },
   };
 };
 
@@ -2263,7 +2343,7 @@ export type StudioSceneExports = {
   startRobotFarmTour: (
     robotId: string,
     waitTimePerPalm?: number,
-    onProgress?: (current: number, total: number, palmId: string) => void
+    onProgress?: (current: number, total: number, palmId: string) => void,
   ) => Promise<{ robotId: string; visited: string[]; cancelled: boolean }>;
   selectPalm: (palmId: string | null) => {
     success: boolean;
