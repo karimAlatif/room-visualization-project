@@ -19,6 +19,8 @@ export interface IStudioSceneManagerProps {
   canvas: HTMLCanvasElement;
   defaultData: DefaultData;
   onReady?: () => void;
+  clearSelectionUI: () => void;
+  takeFarmTour: (robotId: string) => void;
 }
 
 const swayDuration = 120; // total frames
@@ -57,6 +59,8 @@ export class StudioSceneManager {
     entityId: string | null,
     entityType: "palm" | "robot" | null,
   ) => void;
+  private clearSelectionUI: () => void;
+  private takeFarmTour: (robotId: string) => void;
 
   constructor(props: IStudioSceneManagerProps) {
     this.engine = props.engine;
@@ -65,6 +69,8 @@ export class StudioSceneManager {
     this.palms = props.defaultData.palms;
     this.robots = props.defaultData.robots;
     this.onReady = props.onReady;
+    this.clearSelectionUI = props.clearSelectionUI;
+    this.takeFarmTour = props.takeFarmTour;
   }
 
   //#region  MainSceneProperties
@@ -313,10 +319,6 @@ export class StudioSceneManager {
 
     // ===== GLARE/LENS EFFECT =====
     pipeline.glowLayerEnabled = true;
-
-    console.log(
-      "Professional post-processing pipeline configured with all effects",
-    );
   }
 
   addAtmosphericEffects() {
@@ -456,7 +458,13 @@ export class StudioSceneManager {
     await this.loadAndPlacePalmTrees();
 
     // 3. Load and place robots in zone 2
-    await this.loadAndPlaceRobots();
+    await this.loadAndPlaceRobots().then(() => {
+      setTimeout(() => {
+        this.robots.forEach((robot) => {
+          this.takeFarmTour(robot.id);
+        });
+      }, 5000);
+    });
 
     // setTimeout(() => {
     //   this.scene.debugLayer.show();
@@ -594,34 +602,6 @@ export class StudioSceneManager {
     );
     boundary.color = new BABYLON.Color3(0.8, 0.8, 0.8);
     boundary.alpha = 0.3;
-  }
-
-  addGroundInteraction() {
-    // Create a pickable ground plane for mouse interaction
-    const groundPlane = BABYLON.MeshBuilder.CreateGround(
-      "interactiveGround",
-      { width: FarmSize, height: FarmSize },
-      this.scene,
-    );
-    groundPlane.position.y = 0.01; // Slightly above terrain
-    groundPlane.isVisible = false; // Invisible but pickable
-    groundPlane.isPickable = true;
-
-    // Add click interaction to show ripple effect
-    this.scene.onPointerDown = (evt, pickResult) => {
-      if (pickResult.hit && pickResult.pickedPoint) {
-        this.createRippleEffect(pickResult.pickedPoint);
-      }
-    };
-
-    // Add hover effect for cursor
-    this.scene.onPointerMove = (evt, pickResult) => {
-      if (pickResult.hit && pickResult.pickedMesh === groundPlane) {
-        this.canvas.style.cursor = "pointer";
-      } else {
-        this.canvas.style.cursor = "default";
-      }
-    };
   }
 
   createRippleEffect(position: BABYLON.Vector3) {
@@ -898,11 +878,6 @@ export class StudioSceneManager {
       console.log(
         `Loaded robot model with ${sourceAnimationGroups.length} animation groups`,
       );
-      console.log(
-        "Available animations:",
-        sourceAnimationGroups.map((ag) => ag.name),
-      );
-
       // Clone and place 5 robots in zone 2
       // const robotCount = 5;
       for (let i = 0; i < this.robots.length; i++) {
@@ -981,10 +956,6 @@ export class StudioSceneManager {
           );
           this.robots[i].isMoving = false;
         }
-
-        console.log(
-          `Placed robot ${i} at position (${position.x.toFixed(2)}, ${position.z.toFixed(2)})`,
-        );
       }
 
       console.log(
@@ -1073,9 +1044,6 @@ export class StudioSceneManager {
 
       if (matchedTargets > 0) {
         clonedGroups.push(clonedGroup);
-        console.log(
-          `Cloned animation group "${sourceGroup.name}" for robot ${robotIndex} with ${matchedTargets} targets`,
-        );
       }
     });
 
@@ -1097,7 +1065,6 @@ export class StudioSceneManager {
     const palm = this.palms.find((p) => p.id === palmId);
     const speed = 10; // units per second
 
-    console.log(`Command received: Move Robot  `, robot);
     if (!robot || !palm) {
       console.error(`Robot ${robotId} or Palm ${palmId} not found`);
       return { robotId };
@@ -1108,10 +1075,10 @@ export class StudioSceneManager {
       return { robotId };
     }
 
-    if (robot.isMoving) {
-      console.warn(`Robot ${robotId} is already moving`);
-      return { robotId };
-    }
+    // if (robot.isMoving) {
+    //   console.warn(`Robot ${robotId} is already moving`);
+    //   return { robotId };
+    // }
 
     // Mark robot as moving
     robot.isMoving = true;
@@ -1155,7 +1122,7 @@ export class StudioSceneManager {
       robot.robotNode.position.z,
     );
 
-    console.log(`Robot ${robotId} reached palm ${palmId}`);
+    // console.log(`Robot ${robotId} reached palm ${palmId}`);
     return { robotId };
   }
 
@@ -1194,7 +1161,7 @@ export class StudioSceneManager {
     const visited: string[] = [];
     const totalPalms = orderedPalms.length;
 
-    console.log(`🤖 Robot ${robotId} starting farm tour - ${totalPalms} palms to visit`);
+    // console.log(`🤖 Robot ${robotId} starting farm tour - ${totalPalms} palms to visit`);
 
     // Find scanning animation
     const scanAnimation = robot.animationGroups?.find((ag) =>
@@ -1209,7 +1176,7 @@ export class StudioSceneManager {
         onProgress(i + 1, totalPalms, palm.id);
       }
 
-      console.log(`📍 Robot ${robotId} heading to palm ${i + 1}/${totalPalms}: ${palm.id}`);
+      // console.log(`📍 Robot ${robotId} heading to palm ${i + 1}/${totalPalms}: ${palm.id}`);
 
       // Select the current palm for visual feedback
       // this.selectEntity(palm.id, "palm");
@@ -1230,13 +1197,13 @@ export class StudioSceneManager {
         scanAnimation.stop();
       }
 
-      console.log(`✅ Robot ${robotId} completed scan of palm ${palm.id}`);
+      // console.log(`✅ Robot ${robotId} completed scan of palm ${palm.id}`);
     }
 
     // Clear selection at the end
     this.clearSelection();
 
-    console.log(`🎉 Robot ${robotId} completed farm tour! Visited ${visited.length} palms`);
+    // console.log(`🎉 Robot ${robotId} completed farm tour! Visited ${visited.length} palms`);
     return { robotId, visited, cancelled: false };
   }
 
@@ -1845,6 +1812,8 @@ export class StudioSceneManager {
             const entity = this.findEntityFromMesh(pickResult.pickedMesh);
             if (entity) {
               this.selectEntity(entity.id, entity.type);
+            }else{
+              this.clearSelection();
             }
           }
           break;
@@ -1937,15 +1906,31 @@ export class StudioSceneManager {
     // Find entity position
     let position: BABYLON.Vector3 | null = null;
 
+    // Create selection visualization with entity-specific color
+    const color =
+      entityType === "palm"
+        ? new BABYLON.Color3(0.07, 0.3, 0.15) // Green for palms
+        : new BABYLON.Color3(0.07, 0.16, 0.27); // Blue for robots
+
     if (entityType === "palm") {
       const palm = this.palms.find((p) => p.id === entityId);
       if (palm?.palmNode) {
         position = palm.palmNode.position.clone();
+        this.createSelectionCircle(position, color, 5);
+        this.animateCameraToTarget(position);
       }
     } else if (entityType === "robot") {
       const robot = this.robots.find((r) => r.id === entityId);
       if (robot?.robotNode) {
         position = robot.robotNode.position.clone();
+        this.createSelectionCircle(position, color, 0.6, robot.robotNode);
+        this.animateCameraToTarget(position);
+        // Lock camera to follow robot
+        setTimeout(() => {
+            if (this.camera) {
+            this.camera.targetHost = robot.robotNode as BABYLON.AbstractMesh;
+          }
+          }, 1000);
       }
     }
 
@@ -1956,28 +1941,6 @@ export class StudioSceneManager {
 
     this.selectedEntityId = entityId;
     this.selectedEntityType = entityType;
-
-    // Create selection visualization with entity-specific color
-    const color =
-      entityType === "palm"
-        ? new BABYLON.Color3(0.07, 0.3, 0.15) // Green for palms
-        : new BABYLON.Color3(0.07, 0.16, 0.27); // Blue for robots
-
-    // For robots: use smaller radius (1/5 since robot scale is 5), attach to robot node, and lock camera
-    if (entityType === "robot") {
-      const robot = this.robots.find((r) => r.id === entityId);
-      if (robot?.robotNode) {
-        // Circle radius 0.6 (base 3 / 5 for robot scale)
-        this.createSelectionCircle(position, color, 0.6, robot.robotNode);
-        // Lock camera to follow robot
-        if (this.camera) {
-          this.camera.lockedTarget = robot.robotNode;
-        }
-      }
-    } else {
-      this.createSelectionCircle(position, color, 5);
-      this.animateCameraToTarget(position);
-    }
 
     // Notify callback
     if (this.onEntitySelectedCallback) {
@@ -2038,7 +2001,11 @@ export class StudioSceneManager {
   /**
    * Clear the current selection
    */
-  private clearSelection(): void {
+  clearSelection(): void {
+
+    if(this.clearSelectionUI){
+      this.clearSelectionUI();
+    }
     // Unlock camera from any tracked target
     if (this.camera) {
       this.camera.lockedTarget = null;
@@ -2282,6 +2249,9 @@ export const exportedStudioSceneMethods = (
     ) => {
       sceneManager.onEntitySelected(callback);
     },
+    clearSelection: () => {
+      sceneManager.clearSelection();
+    }
   };
 };
 
@@ -2307,6 +2277,7 @@ export type StudioSceneExports = {
     entityId: string | null,
     entityType: "palm" | "robot",
   ) => { success: boolean; entityId: string | null };
+  clearSelection: () => void;
   getSelectedPalmId: () => string | undefined;
   getSelectedRobotId: () => string | undefined;
   onPalmSelected: (callback: (palmId: string | null) => void) => void;

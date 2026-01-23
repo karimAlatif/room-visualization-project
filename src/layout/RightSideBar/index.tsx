@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { Box, IconButton } from "@mui/material";
 import { useStyles } from "./RightSidebar.styles";
 import { useFarmStore } from "src/shared/store";
@@ -17,15 +17,10 @@ export const RightPanel = () => {
   useEffect(() => {
     if (studioSceneMethods) {
       studioSceneMethods.onEntitySelected((entity, entityType) => {
-        console.log("Entity selected:", entity);
         if (!!entity && !!entityType) {
           selectEntity({
             id: entity,
             type: entityType,
-            entity:
-              entityType === "palm"
-                ? palms.find((p) => p.id === entity)
-                : (robots.find((r) => r.id === entity) as Palm | Robot),
           });
         } else {
           selectEntity(undefined);
@@ -34,13 +29,24 @@ export const RightPanel = () => {
     }
   }, [studioSceneMethods]);
 
-  const handleClose = () => {
-    // TODO: Implement close handler if needed
-    // selectPalm(null);
-    // selectRobot(null);
-  };
+  const handleClose = useCallback((): void => {
+    selectEntity(undefined);
+    if (studioSceneMethods) {
+      studioSceneMethods?.clearSelection();
+    }
+  }, [selectEntity, studioSceneMethods]);
 
-  if (!selectedEntity) {
+  const entity = useMemo(() => {
+    if (!selectedEntity) return null;
+    if (selectedEntity.type === "palm") {
+      return palms.find((p) => p.id === selectedEntity.id);
+    } else if (selectedEntity.type === "robot") {
+      return robots.find((r) => r.id === selectedEntity.id);
+    }
+    return null;
+  }, [selectedEntity, palms, robots]);
+
+  if (!selectedEntity || !entity) {
     return <EmptyState />;
   }
 
@@ -48,7 +54,7 @@ export const RightPanel = () => {
     <Box className={classes.panelWithSelection}>
       {/* Header with close button */}
       <Box className={classes.panelHeader}>
-        <PanelHeader selectedEntity={selectedEntity} />
+        <PanelHeader selectedEntity={selectedEntity} entity={entity} />
         <IconButton size="small" onClick={handleClose}>
           <CloseIcon size={20} color="white" strokeWidth={2.5} />
         </IconButton>
@@ -57,12 +63,10 @@ export const RightPanel = () => {
       {/* Content */}
       <Box className={classes.panelContent}>
         {selectedEntity?.type === "palm" && (
-          <PalmDetails palm={selectedEntity.entity as Palm} />
+          <PalmDetails palm={entity as Palm} />
         )}
         {selectedEntity?.type === "robot" && (
-          <RobotDetails
-            robot={robots.find((r) => r.id === selectedEntity.id) as Robot}
-          />
+          <RobotDetails robot={entity as Robot} />
         )}
       </Box>
     </Box>

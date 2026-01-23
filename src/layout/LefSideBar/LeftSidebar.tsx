@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Box, Paper, Tabs, Tab, Stack, Divider } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Tabs,
+  Tab,
+  Stack,
+  Divider,
+  Typography,
+} from "@mui/material";
 import { useFarmStore } from "src/shared/store";
 import { useLeftSidebarStyles } from "./LeftSidebar.styles";
 import { SidebarHeader } from "./SidebarHeader";
@@ -9,11 +17,19 @@ import { RobotFleet } from "./RobotFleet";
 import { TreeList } from "./TreeList";
 
 export const LeftSidebar = () => {
-  const [activeTab, setActiveTab] = useState<"overview" | "trees">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "trees" | "robots">(
+    "overview",
+  );
   const classes = useLeftSidebarStyles();
 
-  const { palms, robots, temperature, selectedEntity, selectEntity } =
-    useFarmStore();
+  const {
+    palms,
+    robots,
+    temperature,
+    selectedEntity,
+    activityLogs,
+    selectEntity,
+  } = useFarmStore();
 
   const healthyCount = palms.filter((p) => p.status === "healthy").length;
   const warningCount = palms.filter((p) => p.status === "warning").length;
@@ -23,7 +39,9 @@ export const LeftSidebar = () => {
     palms.length > 0 ? Math.round((healthyCount / palms.length) * 100) : 0;
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue === 0 ? "overview" : "trees");
+    setActiveTab(
+      newValue === 0 ? "overview" : newValue === 1 ? "trees" : "robots",
+    );
   };
 
   return (
@@ -38,13 +56,14 @@ export const LeftSidebar = () => {
         {/* Tabs */}
         <Box className={classes.tabsContainer}>
           <Tabs
-            value={activeTab === "overview" ? 0 : 1}
+            value={activeTab === "overview" ? 0 : activeTab === "trees" ? 1 : 2}
             onChange={handleTabChange}
             variant="fullWidth"
             className={classes.tabsWrapper}
           >
             <Tab label="Overview" className={classes.tab} />
             <Tab label="Trees" className={classes.tab} />
+            <Tab label="Robots" className={classes.tab} />
           </Tabs>
         </Box>
 
@@ -65,7 +84,47 @@ export const LeftSidebar = () => {
                 criticalCount={criticalCount}
                 totalPalms={palms.length}
               />
-              <RobotFleet robots={robots} />
+
+              {/* Recent Activity */}
+              {activityLogs.length > 0 && (
+                <Box className={classes.activitySection}>
+                  <Typography
+                    variant="caption"
+                    className={classes.activityTitle}
+                  >
+                    Recent Activity
+                  </Typography>
+                  <Box className={classes.activityList}>
+                    {activityLogs.slice(0, 5).map((log, index) => (
+                      <Paper
+                        key={`activity-log-${log.id}-${index}`}
+                        className={classes.activityItem}
+                      >
+                        <Box className={classes.activityHeader}>
+                          <Typography
+                            variant="caption"
+                            className={classes.activityAction}
+                          >
+                            {log.action}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {new Date(log.timestamp).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" color="textSecondary">
+                          {log.details}
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                </Box>
+              )}
             </Stack>
           )}
 
@@ -80,6 +139,8 @@ export const LeftSidebar = () => {
               }
             />
           )}
+
+          {activeTab === "robots" && <RobotFleet robots={robots} />}
         </Box>
       </Paper>
     </Box>

@@ -29,7 +29,8 @@ function AppContent() {
   const theme = useTheme();
   const classes = useAppStyles();
   const [isSceneLoading, setIsSceneLoading] = useState(true);
-  const { palms, robots, setStudioSceneMethods } = useFarmStore();
+  const { palms, robots, setStudioSceneMethods, takeFarmTour, selectEntity } =
+    useFarmStore();
 
   useEffect(() => {
     if (!gmRef.current) return;
@@ -45,6 +46,12 @@ function AppContent() {
           setIsSceneLoading(false);
         }, 1500);
       },
+      () => {
+        selectEntity(undefined);
+      },
+      (robotId: string) => {
+        takeFarmTour(robotId);
+      },
     ); //Create Babylonjs Ref
 
     // Store the exported studio scene methods in the global state
@@ -59,8 +66,6 @@ function AppContent() {
     };
   }, []); // Empty dependency array - only run once on mount
 
-  setTimeout(() => {}, 2000);
-  console.log("theme", theme);
   return (
     <Box className={classes.appContainer}>
       {/* Sidebar Container */}
@@ -85,8 +90,6 @@ function AppContent() {
       </Box>
 
       {/* Loading Screen Overlay */}
-
-      {/* </Box> */}
 
       <Box>
         <RightPanel />

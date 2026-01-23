@@ -184,7 +184,7 @@ export const PalmDetails = ({ palm }: PalmDetailsProps) => {
             {robots.length > 0 ? (
               <Box className={classes.robotList}>
                 {robots.map((robot) => {
-                  const isIdle = robot.status === "idle";
+                  // const isIdle = robot.status === "idle";
                   const statusLabels: Record<string, string> = {
                     idle: "Idle",
                     moving: "Moving",
@@ -198,12 +198,14 @@ export const PalmDetails = ({ palm }: PalmDetailsProps) => {
                     <Button
                       key={robot.id}
                       fullWidth
-                      disabled={!isIdle}
+                      // disabled={!isIdle}
                       onClick={() => handleSendRobot(robot.id)}
                       className={classes.robotButton}
-                      sx={{
-                        opacity: isIdle ? 1 : 0.5,
-                      }}
+                      sx={
+                        {
+                          // opacity: isIdle ? 1 : 0.5,
+                        }
+                      }
                     >
                       <Box className={classes.robotButtonContent}>
                         <Box className={classes.robotInfo}>

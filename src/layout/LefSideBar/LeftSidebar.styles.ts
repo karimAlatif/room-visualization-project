@@ -1,4 +1,4 @@
-import { Theme } from "@mui/material";
+import { alpha, Theme } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 
 export const useLeftSidebarStyles = makeStyles((theme:Theme) => ({
@@ -65,41 +65,50 @@ export const useLeftSidebarStyles = makeStyles((theme:Theme) => ({
   },
 
   tabsContainer: {
-    paddingLeft: 20,
-    paddingRight: 20,
-    paddingBottom: 16,
-    paddingTop: 16,
+    paddingLeft: 4,
+    paddingRight: 4,
+    paddingBottom: 12,
+    paddingTop: 12,
   },
 
   tabsWrapper: {
-    minHeight: 44,
-    backgroundColor: "rgba(255, 255, 255, 0.12) !important",
-    border: "1px solid rgba(147, 197, 253, 0.25) !important",
-    borderRadius: 12,
-    padding: 4,
+    minHeight: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.1) !important",
+    border: "1px solid rgba(147, 197, 253, 0.2) !important",
+    borderRadius: 10,
+    padding: 3,
     boxShadow:
-      "inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(59, 130, 246, 0.08) !important",
+      "inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 2px 6px rgba(59, 130, 246, 0.06) !important",
     "& .MuiTabs-indicator": {
       display: "none",
+    },
+    "& .MuiTabs-flexContainer": {
+      gap: 4,
     },
   },
 
   tab: {
-    minHeight: 38,
-    borderRadius: 10,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 34,
+    maxWidth: "none",
+    padding: "6px 8px",
+    borderRadius: 8,
     textTransform: "none",
     fontWeight: 600,
-    fontSize: "0.875rem !important",
-    color: "rgba(255, 255, 255, 0.5) !important",
-    transition: "all 0.25s ease !important",
+    fontSize: "0.8rem !important",
+    letterSpacing: "0.01em",
+    color: "rgba(255, 255, 255, 0.55) !important",
+    transition: "all 0.2s ease !important",
     "&:hover": {
-      color: "rgba(255, 255, 255, 0.8) !important",
+      color: "rgba(255, 255, 255, 0.85) !important",
+      backgroundColor: "rgba(255, 255, 255, 0.08)",
     },
     "&.Mui-selected": {
       color: "white !important",
       backgroundColor: theme?.palette?.primary?.main,
       boxShadow:
-        "0 2px 8px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important",
+        "0 2px 6px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important",
     },
   },
 
@@ -415,5 +424,77 @@ export const useLeftSidebarStyles = makeStyles((theme:Theme) => ({
   treeStatusDotCritical: {
     backgroundColor: "#ef4444",
     boxShadow: "0 0 10px rgba(239, 68, 68, 0.8)",
+  },
+
+   // Activity Section
+  activitySection: {
+    borderTop: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
+    paddingTop: theme.spacing(2.5),
+    marginTop: theme.spacing(1),
+  },
+
+  activityTitle: {
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    fontWeight: 600,
+    fontSize: "0.7rem",
+    color: theme.palette.text.secondary,
+    marginBottom: theme.spacing(1.5),
+    display: "block",
+  },
+
+  activityList: {
+    display: "flex",
+    flexDirection: "column",
+    margin: `${theme.spacing(2)} 0`,
+    padding: `${theme.spacing(1.5)} ${theme.spacing(1)}`,
+    backgroundColor: alpha(theme.palette.common.white, 0.03),
+    minHeight: 150,
+    gap: theme.spacing(1),
+    maxHeight: 200,
+    borderRadius: 16,
+    overflowY: "auto",
+    "&::-webkit-scrollbar": {
+      width: 6,
+    },
+    "&::-webkit-scrollbar-track": {
+      background: "transparent",
+    },
+    "&::-webkit-scrollbar-thumb": {
+      background: alpha(theme.palette.common.white, 0.15),
+      borderRadius: 3,
+      "&:hover": {
+        background: alpha(theme.palette.common.white, 0.25),
+      },
+    },
+  },
+
+  activityItem: {
+    padding: theme.spacing(1.5),
+    borderRadius: 16,
+    backgroundColor: alpha(theme.palette.common.white, 0.06),
+    backdropFilter: "blur(32px) saturate(200%) brightness(120%)",
+    WebkitBackdropFilter: "blur(32px) saturate(200%) brightness(120%)",
+    border: `1.2px solid ${alpha(theme.palette.common.white, 0.2)}`,
+    boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.12)}, inset 0 1px 6px ${alpha(theme.palette.common.white, 0.1)}, inset 0 0 0 1px ${alpha(theme.palette.common.white, 0.08)}`,
+    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+    "&:hover": {
+      backgroundColor: alpha(theme.palette.common.white, 0.1),
+      borderColor: alpha(theme.palette.common.white, 0.3),
+      boxShadow: `0 6px 24px ${alpha(theme.palette.common.black, 0.15)}, inset 0 1px 8px ${alpha(theme.palette.common.white, 0.12)}, inset 0 0 0 1px ${alpha(theme.palette.common.white, 0.12)}`,
+    },
+  },
+
+  activityHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: theme.spacing(0.5),
+  },
+
+  activityAction: {
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    fontSize: "0.8125rem",
   },
 }));

@@ -6,6 +6,7 @@ import { Entity, Palm, Robot } from "src/types";
 
 interface PanelHeaderProps {
   selectedEntity: Entity;
+  entity: Palm | Robot;
 }
 
 const getRobotStatusConfig = (
@@ -31,21 +32,20 @@ const getPalmStatusConfig = (
   return configs[status] || configs.healthy;
 };
 
-export const PanelHeader = ({ selectedEntity }: PanelHeaderProps) => {
+export const PanelHeader = ({ selectedEntity, entity }: PanelHeaderProps) => {
   const classes = useStyles();
 
   const selectedEntityObject = useMemo(() => {
     if (selectedEntity.type === "palm") {
-      return selectedEntity.entity as Palm;
+      return entity as Palm;
     } else if (selectedEntity.type === "robot") {
-      return selectedEntity.entity as Robot;
+      return entity as Robot;
     }
     return null;
-  }, [selectedEntity]);
+  }, [entity, selectedEntity]);
 
   if (!selectedEntityObject) return null;
 
-  console.log("Selected Entity Object:", selectedEntityObject);
   const statusConfig =
     selectedEntity.type === "palm"
       ? getPalmStatusConfig((selectedEntityObject as Palm).status)

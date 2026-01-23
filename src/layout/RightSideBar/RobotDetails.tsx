@@ -12,42 +12,11 @@ interface RobotDetailsProps {
 
 export const RobotDetails = ({ robot }: RobotDetailsProps) => {
   const classes = useStyles();
-  const { studioSceneMethods, addActivityLog, updateRobotStatus } =
-    useFarmStore();
-
-  // const handleReturnToBase = (): void => {
-  //   returnRobotToBase(robot.id);
-  //   addActivityLog({
-  //     action: "Return Initiated",
-  //     details: `${robot.id} returning to base`,
-  //     entityType: "robot",
-  //     entityId: robot.id,
-  //   });
-  // };
+  const { takeFarmTour } = useFarmStore();
 
   const handleOnFarmTour = useCallback((): void => {
-    if (!studioSceneMethods) {
-      return;
-    }
-    addActivityLog({
-      action: `FARM TOUR`,
-      details: `${robot.id} starting farm tour`,
-      entityType: "robot",
-      entityId: robot.id,
-    });
-    updateRobotStatus(robot.id, "moving");
-    studioSceneMethods.startRobotFarmTour(robot.id).then(() => {
-      addActivityLog({
-        action: `FARM TOUR`,
-        details: `${robot.id} end from farm tour`,
-        entityType: "robot",
-        entityId: robot.id,
-      });
-      updateRobotStatus(robot.id, "idle");
-    });
-  }, [addActivityLog, robot, studioSceneMethods, updateRobotStatus]);
-
-  // const statusConfig = getRobotStatusConfig(robot.status);
+    takeFarmTour(robot.id);
+  }, [robot, takeFarmTour]);
 
   return (
     <Box className={classes.detailsContainer}>
@@ -96,7 +65,7 @@ export const RobotDetails = ({ robot }: RobotDetailsProps) => {
             variant="outlined"
             startIcon={<BotIcon size={18} strokeWidth={2.5} />}
             onClick={handleOnFarmTour}
-            disabled={robot.status === "moving"}
+            // disabled={robot.status === "moving"}
           >
             Take farm tour
           </Button>
