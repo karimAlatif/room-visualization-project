@@ -82,10 +82,10 @@ export class StudioSceneManager {
       //Create Scene
       this.scene.clearColor = new BABYLON.Color4(0.68, 0.78, 0.88, 1); // Lighter sky for better fog blend
       // Add linear fog for distant mountains (not affecting near farm area)
-      this.scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
-      this.scene.fogStart = 2000; // Fog begins at distance (beyond farm)
-      this.scene.fogEnd = 9500; // Full fog at far mountains
-      this.scene.fogColor = new BABYLON.Color3(0.75, 0.82, 0.92); // Lighter atmospheric fog
+      // this.scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
+      // this.scene.fogStart = 2000; // Fog begins at distance (beyond farm)
+      // this.scene.fogEnd = 9500; // Full fog at far mountains
+      // this.scene.fogColor = new BABYLON.Color3(0.75, 0.82, 0.92); // Lighter atmospheric fog
       this.scene.useRightHandedSystem = true; // optional
 
       //Installation
@@ -151,100 +151,150 @@ export class StudioSceneManager {
   }
 
   setUpEnvironMent() {
-    // Main directional light simulating the sun (mid-afternoon position)
+    // Load local environment texture
+    const environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+      "environment/skyEnvironment.env",
+      this.scene
+    );
+    this.scene.environmentTexture = environmentTexture;
+    this.scene.environmentIntensity = 1.4;
+
+    // Simple directional light - positioned to match environment sun
     const sunLight = new BABYLON.DirectionalLight(
       "SunLight",
-      new BABYLON.Vector3(-0.4, -1, -0.35), // Adjusted angle for better shadows
+      new BABYLON.Vector3(0.5, -0.8, 0.2), // Direction pointing down from sky
       this.scene,
     );
-    sunLight.position = new BABYLON.Vector3(110, 170, 60);
-    sunLight.intensity = 3; // Increased for more dramatic intensity
+    // Position the light far away in the direction the sun appears
+    sunLight.position = new BABYLON.Vector3(-500, 800, -200);
+    sunLight.intensity = 2;
+    sunLight.diffuse = new BABYLON.Color3(1.0, 0.96, 0.88);
+    sunLight.specular = new BABYLON.Color3(1.0, 0.98, 0.92);
 
-    // Warm sun color for natural mid-afternoon look
-    sunLight.diffuse = new BABYLON.Color3(1.0, 0.96, 0.88); // Warm sunlight
-    sunLight.specular = new BABYLON.Color3(1.0, 0.98, 0.92); // Warm specular highlights
-
-    // Hemispheric light for realistic sky ambient light
-    const skyLight = new BABYLON.HemisphericLight(
-      "SkyAmbient",
+    // Simple ambient light
+    const ambientLight = new BABYLON.HemisphericLight(
+      "AmbientLight",
       new BABYLON.Vector3(0, 1, 0),
       this.scene,
     );
-    skyLight.intensity = 1.1; // Enhanced ambient for detail visibility
-    skyLight.diffuse = new BABYLON.Color3(0.75, 0.88, 1.0); // Cool sky blue
-    skyLight.groundColor = new BABYLON.Color3(0.5, 0.45, 0.4); // Earth tones
-    skyLight.specular = new BABYLON.Color3(0.3, 0.35, 0.4); // Moderate specular
+    ambientLight.intensity = 0.55;
 
-    // Additional fill light for realistic outdoor lighting (bounced light simulation)
-    const fillLight = new BABYLON.HemisphericLight(
-      "FillLight",
-      new BABYLON.Vector3(0, -1, 0), // From below (ground bounce)
-      this.scene,
-    );
-    fillLight.intensity = 0.55; // Enhanced fill light for clarity
-    fillLight.diffuse = new BABYLON.Color3(0.85, 0.75, 0.65); // Warm earth bounce
-    fillLight.groundColor = new BABYLON.Color3(0.65, 0.75, 0.9); // Cool sky reflection
-    fillLight.specular = new BABYLON.Color3(0, 0, 0); // No specular
+    // Simple shadow generator
+    this.shadowGenerator = new BABYLON.ShadowGenerator(1024, sunLight);
+    this.shadowGenerator.usePercentageCloserFiltering = true;
+    this.shadowGenerator.darkness = 0.3;
 
-    // Optimized shadow generator for performance
-    this.shadowGenerator = new BABYLON.ShadowGenerator(2048, sunLight); // Balanced resolution
-    this.shadowGenerator.usePercentageCloserFiltering = true; // PCF for soft shadows
-    this.shadowGenerator.filteringQuality =
-      BABYLON.ShadowGenerator.QUALITY_MEDIUM; // Medium quality for performance
-    this.shadowGenerator.darkness = 0.22; // Lighter shadows for better detail visibility
-    this.shadowGenerator.bias = 0.00001; // Prevent shadow acne
-    this.shadowGenerator.normalBias = 0.015; // Better shadow alignment
-
-    // Shadow frustum for optimal shadow coverage
-    sunLight.shadowMinZ = 5;
-    sunLight.shadowMaxZ = 450;
-    sunLight.shadowOrthoScale = 0.45; // Balanced coverage
-
-    // this.scene.debugLayer.show();
-    // Create skybox
+    // Create simple skybox
     this.createSkybox();
 
-    // Add realistic post-processing effects
+    // Setup advanced post-processing effects
     this.setupPostProcessing();
-
-    this.scene.registerBeforeRender(() => {});
+    
+    // Add elegant lens flares
+    this.createLensFlares(sunLight);
   }
 
   createSkybox() {
-    // Create realistic skybox with HDR environment
-    const skybox = BABYLON.MeshBuilder.CreateBox(
-      "skyBox",
-      { size: 2000 },
-      this.scene,
+    // Create default skybox like in Babylon.js sandbox
+    if (this.scene.environmentTexture) {
+      const skybox = this.scene.createDefaultSkybox(
+        this.scene.environmentTexture,
+        true, // Create PBR skybox
+        10000,  // Size
+        .08
+      );
+      return skybox;
+    }
+    return null;
+  }
+
+  /**
+   * Create elegant lens flares for the sun light
+   */
+  createLensFlares(light: BABYLON.DirectionalLight) {
+    // Create lens flare system attached to the sun light
+    const lensFlareSystem = new BABYLON.LensFlareSystem(
+      "sunLensFlares",
+      light,
+      this.scene
     );
-    const skyboxMaterial = new BABYLON.StandardMaterial(
-      "skyBoxMat",
-      this.scene,
+
+    // Load flare textures from Babylon.js assets
+    const flareTexture = "https://assets.babylonjs.com/textures/flare.png";
+
+    // Main sun glow - large, soft, warm
+    new BABYLON.LensFlare(
+      100,   // Size
+      0,     // Position (0 = at light source)
+      new BABYLON.Color3(1.0, 0.95, 0.8), // Warm white
+      flareTexture,
+      lensFlareSystem
     );
-    skyboxMaterial.backFaceCulling = false;
-    skyboxMaterial.disableLighting = true;
 
-    // Use HDR environment texture for skybox
-    const hdrTexture = new BABYLON.HDRCubeTexture(
-      "hdr/golden_gate_hills_4k.hdr",
-      this.scene,
-      1024,
+    // Secondary warm glow
+    new BABYLON.LensFlare(
+      0.3,
+      0,
+      new BABYLON.Color3(1.0, 0.85, 0.6), // Golden
+      flareTexture,
+      lensFlareSystem
     );
-    skyboxMaterial.reflectionTexture = hdrTexture;
-    skyboxMaterial.reflectionTexture.coordinatesMode =
-      BABYLON.Texture.SKYBOX_MODE;
 
-    // Add fog tint to skybox for cloud integration
-    skyboxMaterial.emissiveColor = new BABYLON.Color3(0.15, 0.18, 0.22); // Slight fog tint
+    // Subtle rainbow streak
+    new BABYLON.LensFlare(
+      0.1,
+      0.3,
+      new BABYLON.Color3(0.9, 0.6, 0.4), // Orange tint
+      flareTexture,
+      lensFlareSystem
+    );
 
-    skybox.material = skyboxMaterial;
-    skybox.infiniteDistance = true;
+    // Green ghost flare
+    new BABYLON.LensFlare(
+      0.08,
+      0.5,
+      new BABYLON.Color3(0.5, 0.8, 0.5), // Soft green
+      flareTexture,
+      lensFlareSystem
+    );
 
-    // Environment texture for reflections
-    this.scene.environmentTexture = hdrTexture;
-    this.scene.environmentIntensity = 0.35; // Enhanced for atmospheric effect
+    // Blue ghost flare
+    new BABYLON.LensFlare(
+      0.12,
+      0.7,
+      new BABYLON.Color3(0.4, 0.6, 0.9), // Soft blue
+      flareTexture,
+      lensFlareSystem
+    );
 
-    return skybox;
+    // Small bright flare
+    new BABYLON.LensFlare(
+      0.05,
+      0.9,
+      new BABYLON.Color3(1.0, 1.0, 0.9), // Bright white
+      flareTexture,
+      lensFlareSystem
+    );
+
+    // Distant small warm flare
+    new BABYLON.LensFlare(
+      0.06,
+      1.2,
+      new BABYLON.Color3(1.0, 0.8, 0.5), // Warm
+      flareTexture,
+      lensFlareSystem
+    );
+
+    // Final distant glow
+    new BABYLON.LensFlare(
+      0.15,
+      1.5,
+      new BABYLON.Color3(0.8, 0.7, 0.9), // Subtle purple
+      flareTexture,
+      lensFlareSystem
+    );
+
+    return lensFlareSystem;
   }
 
   setupPostProcessing() {
@@ -260,11 +310,11 @@ export class StudioSceneManager {
 
     // ===== BLOOM CONFIGURATION =====
     // Natural sun glow and highlights (optimized)
-    pipeline.bloomEnabled = true;
-    pipeline.bloomThreshold = 0.7; // Higher threshold for less processing
-    pipeline.bloomWeight = 0.35; // Reduced intensity
-    pipeline.bloomKernel = 48; // Smaller kernel for better performance
-    pipeline.bloomScale = 0.5; // Scale factor
+    // pipeline.bloomEnabled = true;
+    // pipeline.bloomThreshold = 0.7; // Higher threshold for less processing
+    // pipeline.bloomWeight = 0.35; // Reduced intensity
+    // pipeline.bloomKernel = 48; // Smaller kernel for better performance
+    // pipeline.bloomScale = 0.5; // Scale factor
 
     // ===== DEPTH OF FIELD (DOF) =====
     // Disabled for performance
@@ -454,8 +504,11 @@ export class StudioSceneManager {
   async initFarmEnvironment() {
     // Central farm area size
 
+    // 0. Load terrain ground mesh
+    await this.loadTerrainGround();
+
     // 1. Create background environment (larger surrounding area)
-    this.createBackgroundEnvironment();
+    // this.createBackgroundEnvironment();
 
     // 2. Load and place palm trees in the central farm
     await this.loadAndPlacePalmTrees();
@@ -478,6 +531,18 @@ export class StudioSceneManager {
 
     // Add atmospheric effects
     this.addAtmosphericEffects();
+
+    // Load and place random obstacles (rocks, etc.)
+    await this.loadAndPlaceRandomObstacles({
+      modelPaths: [
+        "terain/models/Rock_01_LOD2.glb",
+        "terain/models/Rock_Group2 1.glb",
+        "terain/models/rook.glb",
+      ],
+      count: 200,
+      minRadius: 700,
+      maxRadius: 800,
+    });
   }
 
   createBackgroundEnvironment() {
@@ -586,6 +651,341 @@ export class StudioSceneManager {
     pbrMat.clearCoat.roughness = 0.3;
 
     return pbrMat;
+  }
+
+  /**
+   * Loads the terrain GLB mesh as ground and applies materials
+   */
+  async loadTerrainGround(): Promise<BABYLON.AbstractMesh | null> {
+    try {
+      // Load the terrain GLB mesh
+      const result = await BABYLON.SceneLoader.ImportMeshAsync(
+        "",
+        "terain/",
+        "Terrain111.glb",
+        this.scene,
+      );
+
+      await BABYLON.SceneLoader.ImportMeshAsync(
+        "",
+        "terain/models/",
+        "GameObject.glb",
+        this.scene,
+      );
+
+      if (result.meshes.length === 0) {
+        console.error("No meshes found in terrain GLB file");
+        return null;
+      }
+
+      // Get the main terrain mesh (first mesh or root)
+      const terrainMesh = result.meshes.find((mesh => mesh.name === "default")) || result.meshes[0];
+
+      if(!terrainMesh){
+        console.error("Terrain mesh not found in loaded meshes");
+        return null;
+      }
+      terrainMesh.name = "terrainGround";
+      terrainMesh.scaling = new BABYLON.Vector3(1, 1, 1);
+      
+      // Create and apply full PBR material with all textures
+      const terrainMaterial = new BABYLON.PBRMaterial("terrainPBRMaterial", this.scene);
+      
+      // Texture scale for tiling
+      const textureScale = 15;
+      
+      // Albedo/Diffuse texture (base color)
+      const albedoTexture = new BABYLON.Texture(
+        "terain/textuers/Gravel_01_T_A.png",
+        this.scene
+      );
+      albedoTexture.uScale = textureScale;
+      albedoTexture.vScale = textureScale;
+      terrainMaterial.albedoTexture = albedoTexture;
+      
+      // Normal/Bump texture for surface detail
+      const normalTexture = new BABYLON.Texture(
+        "terain/textuers/Gravel_01_T_N.png",
+        this.scene
+      );
+      normalTexture.uScale = textureScale;
+      normalTexture.vScale = textureScale;
+      terrainMaterial.bumpTexture = normalTexture;
+      terrainMaterial.invertNormalMapX = false;
+      terrainMaterial.invertNormalMapY = true;
+      
+      // Ambient Occlusion texture
+      const aoTexture = new BABYLON.Texture(
+        "terain/textuers/Gravel_01_T_AO.png",
+        this.scene
+      );
+      aoTexture.uScale = textureScale;
+      aoTexture.vScale = textureScale;
+      terrainMaterial.ambientTexture = aoTexture;
+      terrainMaterial.ambientTextureStrength = 1.0;
+      
+      // Metallic/Smoothness (MS) texture
+      const metallicTexture = new BABYLON.Texture(
+        "terain/textuers/Gravel_01_T_MS.png",
+        this.scene
+      );
+      metallicTexture.uScale = textureScale;
+      metallicTexture.vScale = textureScale;
+      terrainMaterial.metallicTexture = metallicTexture;
+      terrainMaterial.useRoughnessFromMetallicTextureAlpha = true;
+      terrainMaterial.useRoughnessFromMetallicTextureGreen = false;
+      terrainMaterial.useMetallnessFromMetallicTextureBlue = true;
+      
+      // Height/Displacement texture for parallax
+      const heightTexture = new BABYLON.Texture(
+        "terain/textuers/Gravel_01_T_H.png",
+        this.scene
+      );
+      heightTexture.uScale = textureScale;
+      heightTexture.vScale = textureScale;
+      terrainMaterial.useParallax = true;
+      terrainMaterial.useParallaxOcclusion = true;
+      terrainMaterial.parallaxScaleBias = 0.02;
+      
+      // PBR properties
+      terrainMaterial.metallic = 0.0; // Gravel is non-metallic
+      terrainMaterial.roughness = 0.85; // Rough surface
+      
+      // Environment settings
+      terrainMaterial.environmentIntensity = 0.5;
+      terrainMaterial.directIntensity = 1.2;
+      terrainMaterial.specularIntensity = 0.3;
+      
+      // Enable physical light falloff
+      terrainMaterial.usePhysicalLightFalloff = true;
+      
+      // Two-sided rendering
+      terrainMaterial.backFaceCulling = true;
+      terrainMaterial.twoSidedLighting = false;
+      
+      // Apply material to terrain mesh
+      terrainMesh.material = terrainMaterial;
+      terrainMesh.receiveShadows = true;
+
+      // Store reference to terrain mesh
+      this.terrainMesh = terrainMesh as BABYLON.GroundMesh;
+
+      console.log("Terrain ground loaded successfully with full PBR textures");
+      return terrainMesh;
+    } catch (error) {
+      console.error("Error loading terrain ground:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Configuration interface for random obstacle placement
+   */
+  private obstacleConfig = {
+    modelPaths: [] as string[],
+    count: 50,
+    minRadius: 500,
+    maxRadius: 1500,
+  };
+
+  /**
+   * Load and place random obstacles from an array of model paths
+   * Objects are placed in a ring between minRadius and maxRadius using Poisson-like distribution
+   * 
+   * @param config - Configuration object
+   * @param config.modelPaths - Array of GLB file paths relative to public folder
+   * @param config.count - Number of obstacles to place
+   * @param config.minRadius - Minimum distance from center
+   * @param config.maxRadius - Maximum distance from center
+   */
+  async loadAndPlaceRandomObstacles(config: {
+    modelPaths: string[];
+    count: number;
+    minRadius: number;
+    maxRadius: number;
+  }): Promise<BABYLON.TransformNode | null> {
+    const { modelPaths, count, minRadius, maxRadius } = config;
+    
+    if (modelPaths.length === 0) {
+      console.warn("No model paths provided for obstacles");
+      return null;
+    }
+
+    try {
+      console.log(`Loading ${modelPaths.length} obstacle models...`);
+      
+      // Create root node for all obstacles
+      const obstaclesRoot = new BABYLON.TransformNode("obstaclesRoot", this.scene);
+      
+      // Load all models and cache them (optimization: load once, clone many)
+      const loadedModels: Map<string, BABYLON.ISceneLoaderAsyncResult> = new Map();
+      
+      for (const modelPath of modelPaths) {
+        try {
+          const result = await BABYLON.SceneLoader.ImportMeshAsync(
+            "",
+            "",
+            modelPath,
+            this.scene
+          );
+          
+          // Hide source meshes (they will be cloned)
+          result.meshes.forEach((mesh) => {
+            mesh.setEnabled(false);
+            mesh.isPickable = false;
+          });
+          
+          loadedModels.set(modelPath, result);
+          console.log(`Loaded: ${modelPath}`);
+        } catch (error) {
+          console.error(`Failed to load obstacle model: ${modelPath}`, error);
+        }
+      }
+      
+      if (loadedModels.size === 0) {
+        console.error("No obstacle models could be loaded");
+        return null;
+      }
+
+      // Generate placement positions using Poisson-like distribution
+      const positions = this.generatePoissonDiskPositions(count, minRadius, maxRadius);
+      
+      // Convert loaded models to array for random selection
+      const modelEntries = Array.from(loadedModels.entries());
+      
+      // Place obstacles
+      let placedCount = 0;
+      for (let i = 0; i < positions.length; i++) {
+        const position = positions[i];
+        
+        // Random model selection
+        const [, sourceModel] = modelEntries[Math.floor(Math.random() * modelEntries.length)];
+        const sourceRootMesh = sourceModel.meshes[0];
+        
+        if (!sourceRootMesh) continue;
+        
+        // Clone the model hierarchy
+        const obstacleNode = new BABYLON.TransformNode(`obstacle_${i}`, this.scene);
+        
+        // Clone all meshes
+        sourceModel.meshes.forEach((sourceMesh, meshIndex) => {
+          if (sourceMesh instanceof BABYLON.Mesh) {
+            const clonedMesh = sourceMesh.clone(`obstacle_${i}_mesh_${meshIndex}`, obstacleNode);
+            if (clonedMesh) {
+              clonedMesh.setEnabled(true);
+              clonedMesh.isPickable = false;
+              
+              // Add to shadow generator
+              if (this.shadowGenerator) {
+                this.shadowGenerator.addShadowCaster(clonedMesh);
+              }
+              clonedMesh.receiveShadows = true;
+            }
+          }
+        });
+        
+        // Position with terrain height
+        const terrainHeight = this.getTerrainHeightAt(position.x, position.z);
+        obstacleNode.position = new BABYLON.Vector3(position.x, terrainHeight, position.z);
+        
+        // Random rotation for natural look
+        obstacleNode.rotation.y = Math.random() * Math.PI * 2;
+        
+        // Slight tilt for realism (rocks aren't perfectly upright)
+        obstacleNode.rotation.x = (Math.random() - 0.5) * 0.15;
+        obstacleNode.rotation.z = (Math.random() - 0.5) * 0.15;
+        
+        // Random scale variation for natural diversity
+        const baseScale = 5 + Math.random() * 2.4; // 5 to 7.4
+        const scaleVariation = 0.9 + Math.random() * 0.2; // Slight non-uniform scaling
+        obstacleNode.scaling = new BABYLON.Vector3(
+          baseScale * scaleVariation,
+          baseScale,
+          baseScale * (0.9 + Math.random() * 0.2)
+        );
+        
+        obstacleNode.parent = obstaclesRoot;
+        placedCount++;
+      }
+      
+      console.log(`Successfully placed ${placedCount} obstacles between radius ${minRadius} and ${maxRadius}`);
+      return obstaclesRoot;
+      
+    } catch (error) {
+      console.error("Error loading and placing obstacles:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate positions using Poisson-disk-like sampling for natural distribution
+   * Ensures objects don't overlap and are spread realistically
+   */
+  private generatePoissonDiskPositions(
+    count: number,
+    minRadius: number,
+    maxRadius: number
+  ): BABYLON.Vector3[] {
+    const positions: BABYLON.Vector3[] = [];
+    const minDistance = (maxRadius - minRadius) / Math.sqrt(count) * 0.8; // Minimum spacing between objects
+    const maxAttempts = count * 10; // Prevent infinite loops
+    let attempts = 0;
+    
+    while (positions.length < count && attempts < maxAttempts) {
+      attempts++;
+      
+      // Generate random angle
+      const angle = Math.random() * Math.PI * 2;
+      
+      // Generate random radius with bias towards outer edges (more natural distribution)
+      // Using square root for uniform area distribution
+      const radiusT = Math.random();
+      const radius = Math.sqrt(
+        minRadius * minRadius + radiusT * (maxRadius * maxRadius - minRadius * minRadius)
+      );
+      
+      // Convert to Cartesian coordinates
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      
+      const newPos = new BABYLON.Vector3(x, 0, z);
+      
+      // Check distance from existing positions
+      let tooClose = false;
+      for (const existingPos of positions) {
+        const distance = BABYLON.Vector3.Distance(newPos, existingPos);
+        if (distance < minDistance) {
+          tooClose = true;
+          break;
+        }
+      }
+      
+      // Also add some clustering for natural rock formations
+      const clusterChance = 0.15; // 15% chance to cluster
+      if (!tooClose || (Math.random() < clusterChance && positions.length > 0)) {
+        // For clustering, slightly offset from an existing position
+        if (tooClose && Math.random() < clusterChance && positions.length > 0) {
+          const clusterBase = positions[Math.floor(Math.random() * positions.length)];
+          const clusterOffset = new BABYLON.Vector3(
+            (Math.random() - 0.5) * minDistance * 0.5,
+            0,
+            (Math.random() - 0.5) * minDistance * 0.5
+          );
+          const clusteredPos = clusterBase.add(clusterOffset);
+          
+          // Verify it's still within radius bounds
+          const distFromCenter = Math.sqrt(clusteredPos.x * clusteredPos.x + clusteredPos.z * clusteredPos.z);
+          if (distFromCenter >= minRadius && distFromCenter <= maxRadius) {
+            positions.push(clusteredPos);
+          }
+        } else if (!tooClose) {
+          positions.push(newPos);
+        }
+      }
+    }
+    
+    console.log(`Generated ${positions.length} obstacle positions in ${attempts} attempts`);
+    return positions;
   }
 
   createFarmBoundary() {
@@ -1745,11 +2145,13 @@ export class StudioSceneManager {
   getTerrainHeightAt(x: number, z: number): number {
     // If terrain mesh is available and has getHeightAtCoordinates method
     if (this.terrainMesh) {
+      return 0;
+      console.log("Getting terrain height at:", x, z);
       // Use getHeightAtCoordinates for GroundMesh (accurate for heightmap)
-      const height = this.terrainMesh.getHeightAtCoordinates(x, z);
-      if (height !== undefined && !isNaN(height)) {
-        return height;
-      }
+      // const height = this.terrainMesh.getHeightAtCoordinates(x, z);
+      // if (height !== undefined && !isNaN(height)) {
+      //   return height;
+      // }
     }
 
     // // Fallback: Use raycasting to find terrain height
@@ -2158,7 +2560,7 @@ export class StudioSceneManager {
       this.selectionCircle.position = new BABYLON.Vector3(
         position.x,
         this.terrainMesh &&
-          this.terrainMesh.getHeightAtCoordinates(position.x, position.z) + 0.1,
+          0 + 0.1,
         position.z,
       );
       this.selectionCircle.rotation.x = Math.PI / 2; // Lay flat on ground
