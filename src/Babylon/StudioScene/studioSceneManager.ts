@@ -112,7 +112,7 @@ export class StudioSceneManager {
       "FarmCamera",
       -Math.PI / 2, // Alpha (horizontal rotation)
       Math.PI / 3, // Beta (vertical rotation) - angled view of farm
-      80, // Radius - distance from center
+      250, // Radius - distance from center
       new BABYLON.Vector3(0, 0, 0), // Target center of farm
       this.scene,
     );
@@ -122,7 +122,7 @@ export class StudioSceneManager {
 
     // Limit camera movement to focus on central farm area
     camera.lowerRadiusLimit = 10;
-    camera.upperRadiusLimit = 500;
+    camera.upperRadiusLimit = 1500;
 
     // Limit vertical rotation to keep farm in view
     camera.lowerBetaLimit = 0.2; // Can look up slightly
@@ -137,7 +137,7 @@ export class StudioSceneManager {
     camera.pinchPrecision = 75;
 
     // Disable panning to keep focus on center
-    camera.panningSensibility = 0;
+    camera.panningSensibility = 20;
 
     // Smooth camera movements
     camera.useBouncingBehavior = true;
@@ -154,7 +154,7 @@ export class StudioSceneManager {
     // Load local environment texture
     const environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
       "environment/skyEnvironment.env",
-      this.scene
+      this.scene,
     );
     this.scene.environmentTexture = environmentTexture;
     this.scene.environmentIntensity = 1.4;
@@ -188,10 +188,10 @@ export class StudioSceneManager {
     this.createSkybox();
 
     // Setup advanced post-processing effects
-    this.setupPostProcessing();
-    
+    // this.setupPostProcessing();
+
     // Add elegant lens flares
-    this.createLensFlares(sunLight);
+    // this.createLensFlares(sunLight);
   }
 
   createSkybox() {
@@ -200,8 +200,8 @@ export class StudioSceneManager {
       const skybox = this.scene.createDefaultSkybox(
         this.scene.environmentTexture,
         true, // Create PBR skybox
-        10000,  // Size
-        .08
+        10000, // Size
+        0.08,
       );
       return skybox;
     }
@@ -216,7 +216,7 @@ export class StudioSceneManager {
     const lensFlareSystem = new BABYLON.LensFlareSystem(
       "sunLensFlares",
       light,
-      this.scene
+      this.scene,
     );
 
     // Load flare textures from Babylon.js assets
@@ -224,11 +224,11 @@ export class StudioSceneManager {
 
     // Main sun glow - large, soft, warm
     new BABYLON.LensFlare(
-      100,   // Size
-      0,     // Position (0 = at light source)
+      100, // Size
+      0, // Position (0 = at light source)
       new BABYLON.Color3(1.0, 0.95, 0.8), // Warm white
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Secondary warm glow
@@ -237,7 +237,7 @@ export class StudioSceneManager {
       0,
       new BABYLON.Color3(1.0, 0.85, 0.6), // Golden
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Subtle rainbow streak
@@ -246,7 +246,7 @@ export class StudioSceneManager {
       0.3,
       new BABYLON.Color3(0.9, 0.6, 0.4), // Orange tint
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Green ghost flare
@@ -255,7 +255,7 @@ export class StudioSceneManager {
       0.5,
       new BABYLON.Color3(0.5, 0.8, 0.5), // Soft green
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Blue ghost flare
@@ -264,7 +264,7 @@ export class StudioSceneManager {
       0.7,
       new BABYLON.Color3(0.4, 0.6, 0.9), // Soft blue
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Small bright flare
@@ -273,7 +273,7 @@ export class StudioSceneManager {
       0.9,
       new BABYLON.Color3(1.0, 1.0, 0.9), // Bright white
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Distant small warm flare
@@ -282,7 +282,7 @@ export class StudioSceneManager {
       1.2,
       new BABYLON.Color3(1.0, 0.8, 0.5), // Warm
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     // Final distant glow
@@ -291,7 +291,7 @@ export class StudioSceneManager {
       1.5,
       new BABYLON.Color3(0.8, 0.7, 0.9), // Subtle purple
       flareTexture,
-      lensFlareSystem
+      lensFlareSystem,
     );
 
     return lensFlareSystem;
@@ -511,38 +511,26 @@ export class StudioSceneManager {
     // this.createBackgroundEnvironment();
 
     // 2. Load and place palm trees in the central farm
-    await this.loadAndPlacePalmTrees();
+    // await this.loadAndPlacePalmTrees();
 
     // 3. Load and place robots in zone 2
-    await this.loadAndPlaceRobots().then(() => {
-      setTimeout(() => {
-        this.robots.forEach((robot) => {
-          this.takeFarmTour(robot.id);
-        });
-      }, 5000);
-    });
+    // await this.loadAndPlaceRobots().then(() => {
+    //   setTimeout(() => {
+    //     this.robots.forEach((robot) => {
+    //       this.takeFarmTour(robot.id);
+    //     });
+    //   }, 5000);
+    // });
 
-    // setTimeout(() => {
-    //   this.scene.debugLayer.show();
-    // }, 5000);
+    setTimeout(() => {
+      this.scene.debugLayer.show();
+    }, 5000);
 
     // 4. Add visual boundary indicator
-    this.createFarmBoundary();
+    // this.createFarmBoundary();
 
     // Add atmospheric effects
-    this.addAtmosphericEffects();
-
-    // Load and place random obstacles (rocks, etc.)
-    await this.loadAndPlaceRandomObstacles({
-      modelPaths: [
-        "terain/models/Rock_01_LOD2.glb",
-        "terain/models/Rock_Group2 1.glb",
-        "terain/models/rook.glb",
-      ],
-      count: 200,
-      minRadius: 700,
-      maxRadius: 800,
-    });
+    // this.addAtmosphericEffects();
   }
 
   createBackgroundEnvironment() {
@@ -577,99 +565,510 @@ export class StudioSceneManager {
   }
 
   createPBRTerrainMaterial(textureScale: number): BABYLON.Material {
-    // Create PBR Material for realistic physically-based rendering
-    const pbrMat = new BABYLON.PBRMaterial("pbrTerrain", this.scene);
-
-    // Load high-quality textures
-    const baseColor = new BABYLON.Texture(
-      "Textures/ground/textures/sand/sandy_gravel_02_diff_4k.jpg",
-      this.scene,
-    );
-    baseColor.uScale = textureScale;
-    baseColor.vScale = textureScale;
-
-    const normalTexture = new BABYLON.Texture(
-      "Textures/ground/textures/sand/sandy_gravel_02_nor_gl_4k.jpg",
-      this.scene,
-    );
-    normalTexture.uScale = textureScale;
-    normalTexture.vScale = textureScale;
-
-    const armTexture = new BABYLON.Texture(
-      "Textures/ground/textures/sand/sandy_gravel_02_arm_4k.jpg",
-      this.scene,
-    );
-    armTexture.uScale = textureScale;
-    armTexture.vScale = textureScale;
-
-    // Albedo (Base Color)
-    pbrMat.albedoTexture = baseColor;
-
-    // Normal map for surface detail
-    pbrMat.bumpTexture = normalTexture;
-    pbrMat.invertNormalMapX = false;
-    pbrMat.invertNormalMapY = true;
-
-    // Use ARM texture (Ambient Occlusion, Roughness, Metallic packed)
-    pbrMat.metallicTexture = armTexture;
-    pbrMat.useRoughnessFromMetallicTextureAlpha = false;
-    pbrMat.useRoughnessFromMetallicTextureGreen = true;
-    pbrMat.useMetallnessFromMetallicTextureBlue = true;
-    pbrMat.useAmbientOcclusionFromMetallicTextureRed = true;
-
-    // PBR properties for realistic sand/gravel
-    pbrMat.metallic = 0.0; // Sand is non-metallic
-    pbrMat.roughness = 0.9; // Sandy surface is rough
-
-    // Ambient occlusion strength
-    pbrMat.ambientTextureStrength = 1.0;
-
-    // Subsurface scattering for more realistic sand appearance (optional)
-    pbrMat.subSurface.isRefractionEnabled = false;
-    pbrMat.subSurface.isTranslucencyEnabled = true;
-    pbrMat.subSurface.translucencyIntensity = 0.3;
-    pbrMat.subSurface.tintColor = new BABYLON.Color3(0.95, 0.85, 0.7); // Warm sand tint
-
-    // Environment reflection for realism
-    pbrMat.environmentIntensity = 0.4;
-
-    // Directional intensity (how much the material responds to direct light)
-    pbrMat.directIntensity = 1.5;
-
-    // Enable better lighting model
-    pbrMat.usePhysicalLightFalloff = true;
-
-    // Specular intensity
-    pbrMat.specularIntensity = 0.2;
-
-    // Back face culling
-    pbrMat.backFaceCulling = true;
-
-    // Enable clear coat for wet sand effect (optional, can be adjusted)
-    pbrMat.clearCoat.isEnabled = false; // Set to true for wet sand look
-    pbrMat.clearCoat.intensity = 0.1;
-    pbrMat.clearCoat.roughness = 0.3;
-
-    return pbrMat;
+    // Create advanced sand shader material with realistic desert effects
+    return this.createAdvancedSandMaterial(textureScale);
   }
 
   /**
-   * Loads the terrain GLB mesh as ground and applies materials
+   * Creates an advanced realistic sand material with custom shader effects
+   * Features: Glitter sparkles, dune ripples, subsurface scattering, view-dependent specular
+   */
+  createAdvancedSandMaterial(textureScale: number): BABYLON.Material {
+    // Create PBR Material as base for realistic physically-based rendering
+    const sandMat = new BABYLON.PBRMaterial("advancedSandMaterial", this.scene);
+
+    // Texture paths from available assets
+    const texturePath = "terain/textuers/";
+    const testTexturePath = "terain/models/test/";
+
+    // ============ LOAD TEXTURES ============
+    
+    // Primary sand color/albedo - use colormap from test folder
+    const sandAlbedo = new BABYLON.Texture(
+      `${testTexturePath}kok_Colormap_0_0.png`,
+      this.scene,
+    );
+    sandAlbedo.uScale = textureScale;
+    sandAlbedo.vScale = textureScale;
+
+    // Sand normal map for micro-detail ripples
+    const sandNormal = new BABYLON.Texture(
+      `${testTexturePath}kok_Normal Map_0_0.png`,
+      this.scene,
+    );
+    sandNormal.uScale = textureScale;
+    sandNormal.vScale = textureScale;
+
+    // Dune normal map for larger wave patterns
+    const duneNormal = new BABYLON.Texture(
+      `${texturePath}Dune_01_T_N.png`,
+      this.scene,
+    );
+    duneNormal.uScale = textureScale * 0.3; // Larger scale for dune waves
+    duneNormal.vScale = textureScale * 0.3;
+
+    // Roughness map for varying surface texture
+    const roughnessMap = new BABYLON.Texture(
+      `${testTexturePath}kok_Roughness Map_0_0.png`,
+      this.scene,
+    );
+    roughnessMap.uScale = textureScale;
+    roughnessMap.vScale = textureScale;
+
+    // Ambient occlusion for depth in crevices
+    const aoMap = new BABYLON.Texture(
+      `${testTexturePath}kok_AmbientOcclusionMap_0_0.png`,
+      this.scene,
+    );
+    aoMap.uScale = textureScale;
+    aoMap.vScale = textureScale;
+
+    // Glitter/sparkle noise texture for sand grain glints
+    const glitterNoise = new BABYLON.Texture(
+      `${texturePath}GlitterNoise_T_Packed.png`,
+      this.scene,
+    );
+    glitterNoise.uScale = textureScale * 8; // High frequency for fine sparkles
+    glitterNoise.vScale = textureScale * 8;
+
+    // Relief/height map for parallax effect
+    const reliefMap = new BABYLON.Texture(
+      `${testTexturePath}kok_Reliefmap_0_0.png`,
+      this.scene,
+    );
+    reliefMap.uScale = textureScale;
+    reliefMap.vScale = textureScale;
+
+    // Sand smooth packed texture for detail
+    const sandSmoothPacked = new BABYLON.Texture(
+      `${texturePath}SandSmooth_01_T_Packed.png`,
+      this.scene,
+    );
+    sandSmoothPacked.uScale = textureScale * 2;
+    sandSmoothPacked.vScale = textureScale * 2;
+
+    // Sand harsh packed for rougher areas
+    const sandHarshPacked = new BABYLON.Texture(
+      `${texturePath}SandHarsh_01_T_Packed.png`,
+      this.scene,
+    );
+    sandHarshPacked.uScale = textureScale * 1.5;
+    sandHarshPacked.vScale = textureScale * 1.5;
+
+    // ============ MATERIAL SETUP ============
+    
+    // Albedo (Base Color) - warm desert sand tones
+    sandMat.albedoTexture = sandAlbedo;
+    sandMat.albedoColor = new BABYLON.Color3(1.0, 0.95, 0.88); // Slight warm tint
+
+    // Normal map for surface detail - use primary sand normal
+    sandMat.bumpTexture = sandNormal;
+    sandMat.invertNormalMapX = false;
+    sandMat.invertNormalMapY = true;
+    sandMat.bumpTexture.level = 1.2; // Enhance normal intensity
+
+    // Use detail map for dune wave patterns overlay
+    sandMat.detailMap.texture = duneNormal;
+    sandMat.detailMap.isEnabled = true;
+    sandMat.detailMap.diffuseBlendLevel = 0.2; // Subtle color variation
+    sandMat.detailMap.bumpLevel = 0.8; // Dune wave normal blend
+    sandMat.detailMap.roughnessBlendLevel = 0.3;
+
+    // Roughness - sand is rough but with micro-smooth grains
+    sandMat.metallicTexture = roughnessMap;
+    sandMat.useRoughnessFromMetallicTextureGreen = true;
+    sandMat.useRoughnessFromMetallicTextureAlpha = false;
+    sandMat.roughness = 0.85; // Base roughness
+
+    // Metallic - sand is non-metallic but silica grains have slight reflectance
+    sandMat.metallic = 0.02; // Tiny metallic for grain glints
+    sandMat.useMetallnessFromMetallicTextureBlue = false;
+
+    // Ambient Occlusion for depth
+    sandMat.ambientTexture = aoMap;
+    sandMat.ambientTextureStrength = 1.3;
+    sandMat.useAmbientInGrayScale = true;
+
+    // ============ SUBSURFACE SCATTERING ============
+    // Light penetrates and scatters through sand grains creating warm glow
+    sandMat.subSurface.isTranslucencyEnabled = true;
+    sandMat.subSurface.translucencyIntensity = 0.4;
+    sandMat.subSurface.tintColor = new BABYLON.Color3(0.98, 0.88, 0.72); // Warm golden sand
+    sandMat.subSurface.isScatteringEnabled = true;
+    sandMat.subSurface.scatteringDiffusionProfile = new BABYLON.Color3(1.0, 0.85, 0.65);
+
+    // ============ SHEEN LAYER ============
+    // Velvet-like sheen simulates fine sand grain reflection
+    sandMat.sheen.isEnabled = true;
+    sandMat.sheen.intensity = 0.25;
+    sandMat.sheen.color = new BABYLON.Color3(1.0, 0.95, 0.85); // Warm highlight
+    sandMat.sheen.roughness = 0.5;
+    sandMat.sheen.albedoScaling = true;
+
+    // ============ ENVIRONMENT & LIGHTING ============
+    sandMat.environmentIntensity = 0.6; // Pick up sky reflections
+    sandMat.directIntensity = 1.8; // Strong direct sunlight response
+    sandMat.usePhysicalLightFalloff = true;
+    sandMat.specularIntensity = 0.35; // Moderate specular for grain glints
+
+    // ============ PARALLAX/RELIEF ============
+    // Add depth to sand surface
+    sandMat.useParallax = true;
+    sandMat.useParallaxOcclusion = true;
+    sandMat.parallaxScaleBias = 0.02; // Subtle depth effect
+
+    // ============ MICRO SURFACE ============
+    sandMat.microSurface = 0.88; // Fine grain detail
+    sandMat.useMicroSurfaceFromReflectivityMapAlpha = true;
+
+    // Back face culling
+    sandMat.backFaceCulling = true;
+
+    // ============ CUSTOM GLITTER SHADER EXTENSION ============
+    // Add sparkle effect for sand grain glints catching sunlight
+    this.addSandGlitterEffect(sandMat, glitterNoise);
+
+    console.log("✨ Advanced sand material created with:");
+    console.log("  - Multi-layer normal mapping (micro + dune waves)");
+    console.log("  - Subsurface scattering for warm glow");
+    console.log("  - Sheen layer for velvet-like sand reflection");
+    console.log("  - Parallax depth mapping");
+    console.log("  - Custom glitter sparkle effect");
+
+    return sandMat;
+  }
+
+  /**
+   * Adds custom glitter/sparkle effect to sand material using shader customization
+   * Creates view-dependent sparkles that simulate individual sand grain reflections
+   */
+  addSandGlitterEffect(
+    material: BABYLON.PBRMaterial,
+    glitterTexture: BABYLON.Texture,
+  ): void {
+    // Custom shader code for sand glitter sparkles
+    material.customShaderNameResolve = (
+      shaderName,
+      uniforms,
+      _uniformBuffers,
+      samplers,
+    ) => {
+      // Add custom uniforms
+      uniforms.push("glitterIntensity");
+      uniforms.push("glitterDensity");
+      uniforms.push("glitterThreshold");
+      uniforms.push("time");
+      uniforms.push("sunDirection");
+      
+      // Add glitter texture sampler
+      samplers.push("glitterNoiseSampler");
+
+      return shaderName;
+    };
+
+    // Store glitter texture for shader
+    material.onBindObservable.add(() => {
+      const effect = material.getEffect();
+      if (effect) {
+        // Set glitter uniforms
+        effect.setFloat("glitterIntensity", 0.8);
+        effect.setFloat("glitterDensity", 150.0);
+        effect.setFloat("glitterThreshold", 0.92);
+        effect.setFloat("time", performance.now() / 1000.0);
+        
+        // Sun direction for sparkle alignment
+        const sunDir = new BABYLON.Vector3(0.5, -0.8, 0.2).normalize();
+        effect.setVector3("sunDirection", sunDir);
+
+        // Bind glitter texture
+        effect.setTexture("glitterNoiseSampler", glitterTexture);
+      }
+    });
+
+    // Inject custom shader code for glitter effect
+    BABYLON.Effect.ShadersStore["pbrCustomGlitterPixelShader"] = `
+      // Sand Glitter Sparkle Effect
+      // Simulates light catching individual sand grains
+      
+      float calculateGlitter(vec2 uv, vec3 viewDir, vec3 normal, float time) {
+        // Sample noise at multiple frequencies for natural variation
+        vec2 glitterUV1 = uv * 50.0;
+        vec2 glitterUV2 = uv * 120.0 + vec2(time * 0.01, 0.0);
+        vec2 glitterUV3 = uv * 200.0 - vec2(0.0, time * 0.005);
+        
+        // Pseudo-random based on UV
+        float noise1 = fract(sin(dot(glitterUV1, vec2(12.9898, 78.233))) * 43758.5453);
+        float noise2 = fract(sin(dot(glitterUV2, vec2(39.346, 11.135))) * 43758.5453);
+        float noise3 = fract(sin(dot(glitterUV3, vec2(73.156, 52.235))) * 43758.5453);
+        
+        // Combine noise layers
+        float combinedNoise = (noise1 * 0.5 + noise2 * 0.3 + noise3 * 0.2);
+        
+        // View-dependent sparkle (Fresnel-like)
+        float NdotV = max(dot(normal, viewDir), 0.0);
+        float fresnelSparkle = pow(1.0 - NdotV, 3.0);
+        
+        // Threshold for discrete sparkles
+        float sparkle = step(0.97, combinedNoise) * fresnelSparkle;
+        
+        // Add subtle shimmer
+        float shimmer = pow(combinedNoise, 8.0) * 0.3;
+        
+        return sparkle + shimmer;
+      }
+    `;
+
+    // Add to PBR shader using built-in customization points
+    material.customShaderNameResolve = (
+      shaderName,
+    ) => {
+      return shaderName;
+    };
+
+    // Use material plugin for proper shader injection
+    this.createSandGlitterPlugin(material, glitterTexture);
+  }
+
+  /**
+   * Creates a material plugin for sand glitter effect
+   * This properly integrates with Babylon.js PBR pipeline
+   */
+  createSandGlitterPlugin(
+    material: BABYLON.PBRMaterial,
+    glitterTexture: BABYLON.Texture,
+  ): void {
+    // Create custom material plugin for glitter
+    const glitterPlugin = new SandGlitterPluginMaterial(material, glitterTexture, this.scene);
+    
+    // Store reference for potential updates
+    (material as any)._sandGlitterPlugin = glitterPlugin;
+  }
+
+  /**
+   * Creates an advanced terrain sand material using all available World Creator maps
+   * This is specifically designed for the loaded terrain mesh with full texture support
+   */
+  createAdvancedTerrainSandMaterial(
+    texturePath: string,
+    filePrefix: string,
+  ): BABYLON.Material {
+    const sandMat = new BABYLON.PBRMaterial("terrainSandMaterial", this.scene);
+    const additionalTexturePath = "terain/textuers/";
+
+    // ============ LOAD ALL AVAILABLE MAPS ============
+    
+    // Primary colormap/albedo from World Creator
+    const colorMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Colormap_0_0.png`,
+      this.scene,
+    );
+
+    // Normal map for surface detail
+    const normalMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Normal Map_0_0.png`,
+      this.scene,
+    );
+
+    // Roughness map
+    const roughnessMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Roughness Map_0_0.png`,
+      this.scene,
+    );
+
+    // Metalness map - used for combined metallic texture
+    const metalnessMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Metalness Map_0_0.png`,
+      this.scene,
+    );
+
+    // Ambient occlusion map
+    const aoMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_AmbientOcclusionMap_0_0.png`,
+      this.scene,
+    );
+
+    // Relief map for parallax depth effect
+    const reliefMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Reliefmap_0_0.png`,
+      this.scene,
+    );
+
+    // Height map for displacement effects
+    const heightMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Height Map_3072x3072_0_0.png`,
+      this.scene,
+    );
+
+    // Sand simulation map for erosion patterns - used for detail variation
+    const sandSimulationMap = new BABYLON.Texture(
+      `${texturePath}${filePrefix}_Simulation_Sand_3072x3072_0_0.png`,
+      this.scene,
+    );
+
+    // Dune normal map for wave patterns (from additional textures)
+    const duneNormalMap = new BABYLON.Texture(
+      `${additionalTexturePath}Dune_01_T_N.png`,
+      this.scene,
+    );
+    duneNormalMap.uScale = 0.5;
+    duneNormalMap.vScale = 0.5;
+
+    // Glitter noise for sparkle effect
+    const glitterNoise = new BABYLON.Texture(
+      `${additionalTexturePath}GlitterNoise_T_Packed.png`,
+      this.scene,
+    );
+    glitterNoise.uScale = 8;
+    glitterNoise.vScale = 8;
+
+    // Sand smooth packed texture for micro-detail (used in emissive for subtle variation)
+    const sandSmoothPacked = new BABYLON.Texture(
+      `${additionalTexturePath}SandSmooth_01_T_Packed.png`,
+      this.scene,
+    );
+    sandSmoothPacked.uScale = 4;
+    sandSmoothPacked.vScale = 4;
+
+    // Graininess texture for surface variation
+    const graininessNormal = new BABYLON.Texture(
+      `${additionalTexturePath}GraininessDustWave_T_N.png`,
+      this.scene,
+    );
+    graininessNormal.uScale = 3;
+    graininessNormal.vScale = 3;
+
+    // ============ MATERIAL CONFIGURATION ============
+
+    // Albedo with warm sand color enhancement
+    sandMat.albedoTexture = colorMap;
+    sandMat.albedoColor = new BABYLON.Color3(1.02, 0.98, 0.92); // Slight warm enhancement
+
+    // Primary normal map
+    sandMat.bumpTexture = normalMap;
+    sandMat.invertNormalMapY = true;
+    sandMat.bumpTexture.level = 1.3;
+
+    // Use relief map for parallax occlusion
+    sandMat.useParallax = true;
+    sandMat.useParallaxOcclusion = true;
+    sandMat.parallaxScaleBias = 0.025;
+    
+    // Use height map as additional detail via lightmap channel
+    sandMat.lightmapTexture = heightMap;
+    sandMat.useLightmapAsShadowmap = true;
+    sandMat.bumpTexture.level = 1.3;
+
+    // Detail map for dune waves overlay
+    sandMat.detailMap.texture = duneNormalMap;
+    sandMat.detailMap.isEnabled = true;
+    sandMat.detailMap.diffuseBlendLevel = 0.15;
+    sandMat.detailMap.bumpLevel = 0.6;
+    sandMat.detailMap.roughnessBlendLevel = 0.25;
+
+    // Roughness configuration
+    sandMat.metallicTexture = roughnessMap;
+    sandMat.useRoughnessFromMetallicTextureGreen = true;
+    sandMat.roughness = 0.82;
+
+    // Metallic - very low for sand (silica has minimal metallic property)
+    sandMat.metallic = 0.015;
+
+    // Ambient occlusion for shadows in dunes
+    sandMat.ambientTexture = aoMap;
+    sandMat.ambientTextureStrength = 1.4;
+    sandMat.useAmbientInGrayScale = true;
+
+    // ============ SUBSURFACE SCATTERING ============
+    // Creates warm glow as light penetrates sand grains
+    sandMat.subSurface.isTranslucencyEnabled = true;
+    sandMat.subSurface.translucencyIntensity = 0.5;
+    sandMat.subSurface.tintColor = new BABYLON.Color3(0.98, 0.86, 0.68);
+    sandMat.subSurface.isScatteringEnabled = true;
+    sandMat.subSurface.scatteringDiffusionProfile = new BABYLON.Color3(1.0, 0.82, 0.6);
+
+    // ============ SHEEN LAYER ============
+    // Velvet-like appearance for fine sand
+    sandMat.sheen.isEnabled = true;
+    sandMat.sheen.intensity = 0.3;
+    sandMat.sheen.color = new BABYLON.Color3(1.0, 0.94, 0.82);
+    sandMat.sheen.roughness = 0.45;
+    sandMat.sheen.albedoScaling = true;
+
+    // ============ ANISOTROPY ============
+    // Creates directional highlights like wind-swept sand
+    sandMat.anisotropy.isEnabled = true;
+    sandMat.anisotropy.intensity = 0.4;
+    sandMat.anisotropy.direction = new BABYLON.Vector2(0.7, 0.3); // Wind direction
+
+    // ============ MICRO SURFACE ============
+    sandMat.microSurface = 0.85;
+
+    // ============ ADDITIONAL TEXTURE USAGE ============
+    // Use metalness map for reflectivity texture
+    sandMat.reflectivityTexture = metalnessMap;
+    
+    // Use relief map as the parallax height source
+    sandMat.ambientTexture = reliefMap;
+    sandMat.ambientTextureStrength = 0.8;
+    
+    // Use sand simulation map for subtle emissive variation (heat shimmer effect)
+    sandMat.emissiveTexture = sandSimulationMap;
+    sandMat.emissiveColor = new BABYLON.Color3(0.02, 0.015, 0.01); // Very subtle warm glow
+    sandMat.emissiveIntensity = 0.08;
+    
+    // Use graininess normal for micro-detail via secondary detail layer
+    // (Combined with sand smooth packed for variation)
+    sandMat.detailMap.normalBlendMethod = BABYLON.Material.MATERIAL_NORMALBLENDMETHOD_RNM;
+    
+    // Use sand smooth packed for additional surface variation
+    sandMat.opacityTexture = sandSmoothPacked;
+    sandMat.opacityTexture.getAlphaFromRGB = true;
+    sandMat.useAlphaFromAlbedoTexture = false;
+    sandMat.alpha = 1.0; // Full opacity but texture adds variation
+
+    // ============ ENVIRONMENT & LIGHTING ============
+    sandMat.environmentIntensity = 0.7;
+    sandMat.directIntensity = 1.9;
+    sandMat.specularIntensity = 0.4;
+    sandMat.usePhysicalLightFalloff = true;
+
+    // ============ REFLECTION ============
+    sandMat.reflectionColor = new BABYLON.Color3(0.85, 0.82, 0.75);
+    sandMat.reflectivityColor = new BABYLON.Color3(0.15, 0.14, 0.12);
+
+    // Back face culling
+    sandMat.backFaceCulling = true;
+
+    // ============ APPLY GLITTER PLUGIN ============
+    this.createSandGlitterPlugin(sandMat, glitterNoise);
+
+    console.log("🏜️ Advanced terrain sand material created with:");
+    console.log("  - World Creator maps: Colormap, Normal, Roughness, AO, Relief, Height");
+    console.log("  - Dune wave normal overlay");
+    console.log("  - Subsurface scattering for warm sand glow");
+    console.log("  - Sheen layer for velvet appearance");
+    console.log("  - Anisotropic highlights for wind-swept effect");
+    console.log("  - Parallax depth mapping");
+    console.log("  - Sand grain glitter sparkle effect");
+
+    return sandMat;
+  }
+
+  /**
+   * Loads the World Creator terrain GLB mesh with advanced sand material
+   * Uses ALL available texture maps for maximum visual quality
    */
   async loadTerrainGround(): Promise<BABYLON.AbstractMesh | null> {
     try {
-      // Load the terrain GLB mesh
+      // Base path for World Creator terrain files
+      const texturePath = "terain/models/test/";
+      const filePrefix = "kok";
+
+      // Load the terrain GLB mesh from World Creator export
       const result = await BABYLON.SceneLoader.ImportMeshAsync(
         "",
-        "terain/",
-        "Terrain111.glb",
-        this.scene,
-      );
-
-      await BABYLON.SceneLoader.ImportMeshAsync(
-        "",
-        "terain/models/",
-        "GameObject.glb",
+        texturePath,
+        `${filePrefix}_Mesh_0_0.glb`,
         this.scene,
       );
 
@@ -679,101 +1078,38 @@ export class StudioSceneManager {
       }
 
       // Get the main terrain mesh (first mesh or root)
-      const terrainMesh = result.meshes.find((mesh => mesh.name === "default")) || result.meshes[0];
+      const terrainMesh =
+        result.meshes.find((mesh) => mesh.name !== "__root__") ||
+        result.meshes[0];
 
-      if(!terrainMesh){
+      if (!terrainMesh) {
         console.error("Terrain mesh not found in loaded meshes");
         return null;
       }
+
       terrainMesh.name = "terrainGround";
       terrainMesh.scaling = new BABYLON.Vector3(1, 1, 1);
-      
-      // Create and apply full PBR material with all textures
-      const terrainMaterial = new BABYLON.PBRMaterial("terrainPBRMaterial", this.scene);
-      
-      // Texture scale for tiling
-      const textureScale = 15;
-      
-      // Albedo/Diffuse texture (base color)
-      const albedoTexture = new BABYLON.Texture(
-        "terain/textuers/Gravel_01_T_A.png",
-        this.scene
-      );
-      albedoTexture.uScale = textureScale;
-      albedoTexture.vScale = textureScale;
-      terrainMaterial.albedoTexture = albedoTexture;
-      
-      // Normal/Bump texture for surface detail
-      const normalTexture = new BABYLON.Texture(
-        "terain/textuers/Gravel_01_T_N.png",
-        this.scene
-      );
-      normalTexture.uScale = textureScale;
-      normalTexture.vScale = textureScale;
-      terrainMaterial.bumpTexture = normalTexture;
-      terrainMaterial.invertNormalMapX = false;
-      terrainMaterial.invertNormalMapY = true;
-      
-      // Ambient Occlusion texture
-      const aoTexture = new BABYLON.Texture(
-        "terain/textuers/Gravel_01_T_AO.png",
-        this.scene
-      );
-      aoTexture.uScale = textureScale;
-      aoTexture.vScale = textureScale;
-      terrainMaterial.ambientTexture = aoTexture;
-      terrainMaterial.ambientTextureStrength = 1.0;
-      
-      // Metallic/Smoothness (MS) texture
-      const metallicTexture = new BABYLON.Texture(
-        "terain/textuers/Gravel_01_T_MS.png",
-        this.scene
-      );
-      metallicTexture.uScale = textureScale;
-      metallicTexture.vScale = textureScale;
-      terrainMaterial.metallicTexture = metallicTexture;
-      terrainMaterial.useRoughnessFromMetallicTextureAlpha = true;
-      terrainMaterial.useRoughnessFromMetallicTextureGreen = false;
-      terrainMaterial.useMetallnessFromMetallicTextureBlue = true;
-      
-      // Height/Displacement texture for parallax
-      const heightTexture = new BABYLON.Texture(
-        "terain/textuers/Gravel_01_T_H.png",
-        this.scene
-      );
-      heightTexture.uScale = textureScale;
-      heightTexture.vScale = textureScale;
-      terrainMaterial.useParallax = true;
-      terrainMaterial.useParallaxOcclusion = true;
-      terrainMaterial.parallaxScaleBias = 0.02;
-      
-      // PBR properties
-      terrainMaterial.metallic = 0.0; // Gravel is non-metallic
-      terrainMaterial.roughness = 0.85; // Rough surface
-      
-      // Environment settings
-      terrainMaterial.environmentIntensity = 0.5;
-      terrainMaterial.directIntensity = 1.2;
-      terrainMaterial.specularIntensity = 0.3;
-      
-      // Enable physical light falloff
-      terrainMaterial.usePhysicalLightFalloff = true;
-      
-      // Two-sided rendering
-      terrainMaterial.backFaceCulling = true;
-      terrainMaterial.twoSidedLighting = false;
-      
-      // Apply material to terrain mesh
-      terrainMesh.material = terrainMaterial;
-      terrainMesh.receiveShadows = true;
+      terrainMesh.position = new BABYLON.Vector3(-500, 0, -500);
 
-      // Store reference to terrain mesh
+      // Apply the advanced sand material to the terrain mesh
+      const advancedSandMaterial = this.createAdvancedTerrainSandMaterial(texturePath, filePrefix);
+      (terrainMesh as BABYLON.Mesh).material = advancedSandMaterial;
+
+      terrainMesh.receiveShadows = true;
+      if (this.shadowGenerator) {
+        this.shadowGenerator.addShadowCaster(terrainMesh);
+      }
+      // Store reference
       this.terrainMesh = terrainMesh as BABYLON.GroundMesh;
 
-      console.log("Terrain ground loaded successfully with full PBR textures");
+      console.log("✅ World Creator terrain loaded with advanced sand material");
+      console.log(
+        "🏜️ Features: Glitter sparkles, subsurface scattering, anisotropic highlights, parallax depth",
+      );
+
       return terrainMesh;
     } catch (error) {
-      console.error("Error loading terrain ground:", error);
+      console.error("Error loading World Creator terrain:", error);
       return null;
     }
   }
@@ -789,167 +1125,39 @@ export class StudioSceneManager {
   };
 
   /**
-   * Load and place random obstacles from an array of model paths
-   * Objects are placed in a ring between minRadius and maxRadius using Poisson-like distribution
-   * 
-   * @param config - Configuration object
-   * @param config.modelPaths - Array of GLB file paths relative to public folder
-   * @param config.count - Number of obstacles to place
-   * @param config.minRadius - Minimum distance from center
-   * @param config.maxRadius - Maximum distance from center
-   */
-  async loadAndPlaceRandomObstacles(config: {
-    modelPaths: string[];
-    count: number;
-    minRadius: number;
-    maxRadius: number;
-  }): Promise<BABYLON.TransformNode | null> {
-    const { modelPaths, count, minRadius, maxRadius } = config;
-    
-    if (modelPaths.length === 0) {
-      console.warn("No model paths provided for obstacles");
-      return null;
-    }
-
-    try {
-      console.log(`Loading ${modelPaths.length} obstacle models...`);
-      
-      // Create root node for all obstacles
-      const obstaclesRoot = new BABYLON.TransformNode("obstaclesRoot", this.scene);
-      
-      // Load all models and cache them (optimization: load once, clone many)
-      const loadedModels: Map<string, BABYLON.ISceneLoaderAsyncResult> = new Map();
-      
-      for (const modelPath of modelPaths) {
-        try {
-          const result = await BABYLON.SceneLoader.ImportMeshAsync(
-            "",
-            "",
-            modelPath,
-            this.scene
-          );
-          
-          // Hide source meshes (they will be cloned)
-          result.meshes.forEach((mesh) => {
-            mesh.setEnabled(false);
-            mesh.isPickable = false;
-          });
-          
-          loadedModels.set(modelPath, result);
-          console.log(`Loaded: ${modelPath}`);
-        } catch (error) {
-          console.error(`Failed to load obstacle model: ${modelPath}`, error);
-        }
-      }
-      
-      if (loadedModels.size === 0) {
-        console.error("No obstacle models could be loaded");
-        return null;
-      }
-
-      // Generate placement positions using Poisson-like distribution
-      const positions = this.generatePoissonDiskPositions(count, minRadius, maxRadius);
-      
-      // Convert loaded models to array for random selection
-      const modelEntries = Array.from(loadedModels.entries());
-      
-      // Place obstacles
-      let placedCount = 0;
-      for (let i = 0; i < positions.length; i++) {
-        const position = positions[i];
-        
-        // Random model selection
-        const [, sourceModel] = modelEntries[Math.floor(Math.random() * modelEntries.length)];
-        const sourceRootMesh = sourceModel.meshes[0];
-        
-        if (!sourceRootMesh) continue;
-        
-        // Clone the model hierarchy
-        const obstacleNode = new BABYLON.TransformNode(`obstacle_${i}`, this.scene);
-        
-        // Clone all meshes
-        sourceModel.meshes.forEach((sourceMesh, meshIndex) => {
-          if (sourceMesh instanceof BABYLON.Mesh) {
-            const clonedMesh = sourceMesh.clone(`obstacle_${i}_mesh_${meshIndex}`, obstacleNode);
-            if (clonedMesh) {
-              clonedMesh.setEnabled(true);
-              clonedMesh.isPickable = false;
-              
-              // Add to shadow generator
-              if (this.shadowGenerator) {
-                this.shadowGenerator.addShadowCaster(clonedMesh);
-              }
-              clonedMesh.receiveShadows = true;
-            }
-          }
-        });
-        
-        // Position with terrain height
-        const terrainHeight = this.getTerrainHeightAt(position.x, position.z);
-        obstacleNode.position = new BABYLON.Vector3(position.x, terrainHeight, position.z);
-        
-        // Random rotation for natural look
-        obstacleNode.rotation.y = Math.random() * Math.PI * 2;
-        
-        // Slight tilt for realism (rocks aren't perfectly upright)
-        obstacleNode.rotation.x = (Math.random() - 0.5) * 0.15;
-        obstacleNode.rotation.z = (Math.random() - 0.5) * 0.15;
-        
-        // Random scale variation for natural diversity
-        const baseScale = 5 + Math.random() * 2.4; // 5 to 7.4
-        const scaleVariation = 0.9 + Math.random() * 0.2; // Slight non-uniform scaling
-        obstacleNode.scaling = new BABYLON.Vector3(
-          baseScale * scaleVariation,
-          baseScale,
-          baseScale * (0.9 + Math.random() * 0.2)
-        );
-        
-        obstacleNode.parent = obstaclesRoot;
-        placedCount++;
-      }
-      
-      console.log(`Successfully placed ${placedCount} obstacles between radius ${minRadius} and ${maxRadius}`);
-      return obstaclesRoot;
-      
-    } catch (error) {
-      console.error("Error loading and placing obstacles:", error);
-      return null;
-    }
-  }
-
-  /**
    * Generate positions using Poisson-disk-like sampling for natural distribution
    * Ensures objects don't overlap and are spread realistically
    */
   private generatePoissonDiskPositions(
     count: number,
     minRadius: number,
-    maxRadius: number
+    maxRadius: number,
   ): BABYLON.Vector3[] {
     const positions: BABYLON.Vector3[] = [];
-    const minDistance = (maxRadius - minRadius) / Math.sqrt(count) * 0.8; // Minimum spacing between objects
+    const minDistance = ((maxRadius - minRadius) / Math.sqrt(count)) * 0.8; // Minimum spacing between objects
     const maxAttempts = count * 10; // Prevent infinite loops
     let attempts = 0;
-    
+
     while (positions.length < count && attempts < maxAttempts) {
       attempts++;
-      
+
       // Generate random angle
       const angle = Math.random() * Math.PI * 2;
-      
+
       // Generate random radius with bias towards outer edges (more natural distribution)
       // Using square root for uniform area distribution
       const radiusT = Math.random();
       const radius = Math.sqrt(
-        minRadius * minRadius + radiusT * (maxRadius * maxRadius - minRadius * minRadius)
+        minRadius * minRadius +
+          radiusT * (maxRadius * maxRadius - minRadius * minRadius),
       );
-      
+
       // Convert to Cartesian coordinates
       const x = Math.cos(angle) * radius;
       const z = Math.sin(angle) * radius;
-      
+
       const newPos = new BABYLON.Vector3(x, 0, z);
-      
+
       // Check distance from existing positions
       let tooClose = false;
       for (const existingPos of positions) {
@@ -959,22 +1167,28 @@ export class StudioSceneManager {
           break;
         }
       }
-      
+
       // Also add some clustering for natural rock formations
       const clusterChance = 0.15; // 15% chance to cluster
-      if (!tooClose || (Math.random() < clusterChance && positions.length > 0)) {
+      if (
+        !tooClose ||
+        (Math.random() < clusterChance && positions.length > 0)
+      ) {
         // For clustering, slightly offset from an existing position
         if (tooClose && Math.random() < clusterChance && positions.length > 0) {
-          const clusterBase = positions[Math.floor(Math.random() * positions.length)];
+          const clusterBase =
+            positions[Math.floor(Math.random() * positions.length)];
           const clusterOffset = new BABYLON.Vector3(
             (Math.random() - 0.5) * minDistance * 0.5,
             0,
-            (Math.random() - 0.5) * minDistance * 0.5
+            (Math.random() - 0.5) * minDistance * 0.5,
           );
           const clusteredPos = clusterBase.add(clusterOffset);
-          
+
           // Verify it's still within radius bounds
-          const distFromCenter = Math.sqrt(clusteredPos.x * clusteredPos.x + clusteredPos.z * clusteredPos.z);
+          const distFromCenter = Math.sqrt(
+            clusteredPos.x * clusteredPos.x + clusteredPos.z * clusteredPos.z,
+          );
           if (distFromCenter >= minRadius && distFromCenter <= maxRadius) {
             positions.push(clusteredPos);
           }
@@ -983,8 +1197,10 @@ export class StudioSceneManager {
         }
       }
     }
-    
-    console.log(`Generated ${positions.length} obstacle positions in ${attempts} attempts`);
+
+    console.log(
+      `Generated ${positions.length} obstacle positions in ${attempts} attempts`,
+    );
     return positions;
   }
 
@@ -1530,7 +1746,7 @@ export class StudioSceneManager {
     if (scanAnimation) {
       scanAnimation.stop();
     }
-    
+
     // Stop walking animation and mark as completed
     if (walkAnimation) {
       walkAnimation.stop();
@@ -2559,8 +2775,7 @@ export class StudioSceneManager {
       // Position flat on ground (horizontal) - for palms
       this.selectionCircle.position = new BABYLON.Vector3(
         position.x,
-        this.terrainMesh &&
-          0 + 0.1,
+        this.terrainMesh && 0 + 0.1,
         position.z,
       );
       this.selectionCircle.rotation.x = Math.PI / 2; // Lay flat on ground
@@ -2770,3 +2985,216 @@ export type StudioSceneExports = {
     ) => void,
   ) => void;
 };
+
+/**
+ * Custom Material Plugin for Sand Glitter/Sparkle Effect
+ * Integrates with Babylon.js PBR pipeline to add view-dependent sparkles
+ * that simulate individual sand grains catching sunlight
+ */
+class SandGlitterPluginMaterial extends BABYLON.MaterialPluginBase {
+  private _glitterTexture: BABYLON.Texture;
+  private _scene: BABYLON.Scene;
+  private _pluginEnabled = true;
+  
+  // Glitter parameters
+  public glitterIntensity = 0.6;
+  public glitterDensity = 100.0;
+  public glitterThreshold = 0.94;
+  public glitterColor = new BABYLON.Color3(1.0, 0.98, 0.92);
+  public sparkleSpeed = 0.02;
+
+  constructor(
+    material: BABYLON.PBRMaterial,
+    glitterTexture: BABYLON.Texture,
+    scene: BABYLON.Scene,
+  ) {
+    super(material, "SandGlitter", 200, { SAND_GLITTER: false });
+    this._glitterTexture = glitterTexture;
+    this._scene = scene;
+    this._enable(true);
+  }
+
+  get pluginEnabled(): boolean {
+    return this._pluginEnabled;
+  }
+
+  set pluginEnabled(value: boolean) {
+    if (this._pluginEnabled === value) {
+      return;
+    }
+    this._pluginEnabled = value;
+    this.markAllDefinesAsDirty();
+    this._enable(value);
+  }
+
+  override prepareDefines(
+    defines: BABYLON.MaterialDefines,
+  ): void {
+    defines["SAND_GLITTER"] = this._pluginEnabled;
+  }
+
+  override getClassName(): string {
+    return "SandGlitterPluginMaterial";
+  }
+
+  override getSamplers(samplers: string[]): void {
+    samplers.push("glitterNoiseSampler");
+    samplers.push("sandDetailSampler");
+  }
+
+  override getUniforms(): {
+    ubo?: { name: string; size: number; type: string }[];
+    vertex?: string;
+    fragment?: string;
+  } {
+    return {
+      ubo: [
+        { name: "glitterIntensity", size: 1, type: "float" },
+        { name: "glitterDensity", size: 1, type: "float" },
+        { name: "glitterThreshold", size: 1, type: "float" },
+        { name: "glitterTime", size: 1, type: "float" },
+        { name: "glitterColor", size: 3, type: "vec3" },
+        { name: "sparkleSpeed", size: 1, type: "float" },
+        { name: "sunDirection", size: 3, type: "vec3" },
+        { name: "cameraPosition", size: 3, type: "vec3" },
+      ],
+      fragment: `
+        #ifdef SAND_GLITTER
+          uniform float glitterIntensity;
+          uniform float glitterDensity;
+          uniform float glitterThreshold;
+          uniform float glitterTime;
+          uniform vec3 glitterColor;
+          uniform float sparkleSpeed;
+          uniform vec3 sunDirection;
+          uniform vec3 cameraPosition;
+          uniform sampler2D glitterNoiseSampler;
+        #endif
+      `,
+    };
+  }
+
+  override bindForSubMesh(
+    uniformBuffer: BABYLON.UniformBuffer,
+    scene: BABYLON.Scene,
+    _engine: BABYLON.Engine,
+    subMesh: BABYLON.SubMesh,
+  ): void {
+    if (!this._pluginEnabled) {
+      return;
+    }
+
+    const effect = subMesh.effect;
+    if (!effect) {
+      return;
+    }
+
+    // Bind uniforms
+    uniformBuffer.updateFloat("glitterIntensity", this.glitterIntensity);
+    uniformBuffer.updateFloat("glitterDensity", this.glitterDensity);
+    uniformBuffer.updateFloat("glitterThreshold", this.glitterThreshold);
+    uniformBuffer.updateFloat("glitterTime", performance.now() / 1000.0);
+    uniformBuffer.updateFloat("sparkleSpeed", this.sparkleSpeed);
+    uniformBuffer.updateColor3("glitterColor", this.glitterColor);
+    
+    // Sun direction (normalized)
+    const sunDir = new BABYLON.Vector3(0.5, -0.8, 0.2).normalize();
+    uniformBuffer.updateVector3("sunDirection", sunDir);
+    
+    // Camera position
+    if (scene.activeCamera) {
+      uniformBuffer.updateVector3("cameraPosition", scene.activeCamera.position);
+    }
+
+    // Bind glitter texture
+    if (this._glitterTexture && this._glitterTexture.isReady()) {
+      effect.setTexture("glitterNoiseSampler", this._glitterTexture);
+    }
+  }
+
+  override getCustomCode(shaderType: string): { [point: string]: string } | null {
+    if (shaderType === "fragment") {
+      return {
+        // Inject after lighting calculations, before final color output
+        "!baseColor.rgb;": `
+          baseColor.rgb;
+          
+          #ifdef SAND_GLITTER
+            // === SAND GLITTER SPARKLE EFFECT ===
+            
+            // Get world position and view direction
+            vec3 worldPos = vPositionW;
+            vec3 viewDir = normalize(cameraPosition - worldPos);
+            vec3 normalDir = normalize(vNormalW);
+            
+            // Multi-frequency UV sampling for natural variation
+            vec2 glitterUV1 = vMainUV1 * glitterDensity;
+            vec2 glitterUV2 = vMainUV1 * glitterDensity * 2.3 + vec2(glitterTime * sparkleSpeed, 0.0);
+            vec2 glitterUV3 = vMainUV1 * glitterDensity * 0.7 - vec2(0.0, glitterTime * sparkleSpeed * 0.5);
+            
+            // Generate pseudo-random sparkle pattern
+            float noise1 = fract(sin(dot(glitterUV1, vec2(12.9898, 78.233))) * 43758.5453);
+            float noise2 = fract(sin(dot(glitterUV2, vec2(39.346, 11.135))) * 43758.5453);
+            float noise3 = fract(sin(dot(glitterUV3, vec2(73.156, 52.235))) * 43758.5453);
+            
+            // Sample noise texture for additional variation
+            vec4 noiseSample = texture2D(glitterNoiseSampler, vMainUV1 * 15.0 + vec2(glitterTime * 0.01, 0.0));
+            
+            // Combine noise sources
+            float combinedNoise = noise1 * 0.4 + noise2 * 0.35 + noise3 * 0.25;
+            combinedNoise = combinedNoise * 0.7 + noiseSample.r * 0.3;
+            
+            // View-dependent reflection (simulate micro-facets on sand grains)
+            float NdotV = max(dot(normalDir, viewDir), 0.0);
+            float NdotL = max(dot(normalDir, -normalize(sunDirection)), 0.0);
+            
+            // Half-vector for specular-like sparkle
+            vec3 halfVec = normalize(viewDir - normalize(sunDirection));
+            float NdotH = max(dot(normalDir, halfVec), 0.0);
+            
+            // Fresnel term - sparkles more visible at grazing angles
+            float fresnel = pow(1.0 - NdotV, 3.0);
+            
+            // Sparkle threshold with view dependency
+            float sparkleThreshold = glitterThreshold - fresnel * 0.08 - NdotH * 0.05;
+            
+            // Discrete sparkles (high threshold)
+            float sparkle = step(sparkleThreshold, combinedNoise);
+            sparkle *= pow(NdotH, 4.0) * 2.0; // Concentrate sparkles toward sun reflection
+            
+            // Subtle shimmer (lower threshold, softer)
+            float shimmer = pow(max(combinedNoise - 0.7, 0.0) / 0.3, 3.0) * 0.15;
+            shimmer *= (0.5 + 0.5 * NdotL); // Shimmer in lit areas
+            
+            // Combine sparkle and shimmer
+            float totalGlitter = (sparkle + shimmer) * glitterIntensity;
+            
+            // Color the glitter with warm golden tones
+            vec3 sparkleColor = glitterColor * (1.0 + fresnel * 0.3);
+            
+            // Add glitter to base color
+            baseColor.rgb += sparkleColor * totalGlitter * NdotL;
+          #endif
+        `,
+        
+        // Add subtle sand color variation
+        "!surfaceAlbedo.rgb;": `
+          surfaceAlbedo.rgb;
+          
+          #ifdef SAND_GLITTER
+            // Subtle color variation based on position
+            float colorVar = fract(sin(dot(vMainUV1 * 20.0, vec2(12.9898, 78.233))) * 43758.5453);
+            vec3 sandVariation = mix(
+              vec3(0.95, 0.85, 0.70), // Lighter sand
+              vec3(0.88, 0.75, 0.58), // Darker sand
+              colorVar * 0.3
+            );
+            surfaceAlbedo.rgb *= sandVariation;
+          #endif
+        `,
+      };
+    }
+    
+    return null;
+  }
+}

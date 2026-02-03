@@ -944,6 +944,18 @@ babylonjs-loaders@^8.41.0:
     babylonjs "^8.45.4"
     babylonjs-gltf2interface "^8.45.4"
 
+babylonjs-materials@^8.49.6:
+  version "8.49.6"
+  resolved "https://registry.yarnpkg.com/babylonjs-materials/-/babylonjs-materials-8.49.6.tgz#6fef8a24a214bea95d043084e5743170c0a5be13"
+  integrity sha512-IXRCklGbBjl8x+5hTqQlZmBdJF3KVjfAy2RGjXKkh27NNoOFkRrzQpj8XXwvAPly8Gmis3k/ihvUfI7/Z3veiQ==
+  dependencies:
+    babylonjs "8.49.6"
+
+babylonjs@8.49.6:
+  version "8.49.6"
+  resolved "https://registry.yarnpkg.com/babylonjs/-/babylonjs-8.49.6.tgz#3b6b1a4535e9188ada13a624ffcfa9bc2f2a26db"
+  integrity sha512-0BrW9LIX6DkG+/WRKMfrBT4Kvyjmuqi1iyk8Emqr2+g1MjLi8wreayyBoN1aKPIA6KyncRhAtfWnjTEDEJvOHQ==
+
 babylonjs@^8.41.0, babylonjs@^8.45.4:
   version "8.45.4"
   resolved "https://registry.npmjs.org/babylonjs/-/babylonjs-8.45.4.tgz"
