@@ -70,9 +70,9 @@ function AppContent() {
     <Box className={classes.appContainer}>
       {/* Sidebar Container */}
 
-      {/*<Box className={classes.sidebarWrapper}>
+      <Box className={classes.sidebarWrapper}>
         <LeftSidebar />
-      </Box> */}
+      </Box>
 
       {/* Main Content Area */}
       {/* <Box className={classes.mainContent}> */}
@@ -91,9 +91,9 @@ function AppContent() {
 
       {/* Loading Screen Overlay */}
 
-      {/* <Box>
+      <Box>
         <RightPanel />
-      </Box> */}
+      </Box>
     </Box>
   );
 }
